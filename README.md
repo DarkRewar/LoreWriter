@@ -41,7 +41,19 @@ npm run typecheck  # vérification TypeScript stricte
 npm run build      # build de production dans dist/
 ```
 
-## Héberger l'application (accès « de n'importe où »)
+## Déploiement automatique sur GitHub Pages (GitHub.io)
+
+Le dépôt publie automatiquement l'application sur **[https://darkrewar.github.io/LoreWriter/](https://darkrewar.github.io/LoreWriter/)** :
+
+- à chaque **release publiée** (tag `v*`, ex. `v0.1.0`), le workflow `.github/workflows/deploy-pages.yml` build
+  l'app (base `/LoreWriter/`) et la déploie sur GitHub Pages ;
+- déploiement manuel possible via l'onglet **Actions → « Deploy to GitHub Pages » → Run workflow** ;
+- GitHub Pages nécessite un dépôt **public** (plan gratuit) : le code ne contient aucun secret (app 100 % client-side).
+
+L'URL en HTTPS permet d'installer la PWA sur téléphone (« Ajouter à l'écran d'accueil ») et d'utiliser la synchro
+cloud WebDAV sans blocage de contenu mixte.
+
+## Héberger l'application soi-même (Docker)
 
 L'application est une SPA statique : servez le contenu de `dist/` avec n'importe quel serveur web.
 
