@@ -13,6 +13,7 @@ export default function NovelPage() {
     [projectId],
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [focus, setFocus] = useState(false)
   const [content, setContent] = useState('')
   const [title, setTitle] = useState('')
 
@@ -76,59 +77,81 @@ export default function NovelPage() {
     <div className="page">
       <div className="toolbar">
         <h1 style={{ margin: 0 }}>Roman</h1>
-        <span className="muted">{selected ? `${wordCount(content)} mots` : ''}</span>
-        <button type="button" className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={addChapter}>
-          + Nouveau chapitre
-        </button>
+        <span className="muted">
+          {chapters?.length ?? 0} chapitre{chapters && chapters.length > 1 ? 's' : ''}
+        </span>
+        <div className="btn-row" style={{ marginLeft: 'auto' }}>
+          <button type="button" className="btn" onClick={() => setFocus((f) => !f)} title="Masquer la liste des chapitres pour écrire en plein écran">
+            {focus ? '📖 Voir les chapitres' : '✍️ Mode écriture'}
+          </button>
+          <button type="button" className="btn btn-primary" onClick={addChapter}>
+            + Nouveau chapitre
+          </button>
+        </div>
       </div>
 
-      <div className="novel-layout">
-        <div className="panel">
-          <h2>Chapitres ({chapters?.length ?? 0})</h2>
-          {!chapters || chapters.length === 0 ? (
-            <p className="muted">Aucun chapitre.</p>
-          ) : (
-            <div className="chapter-list">
-              {chapters.map((c, i) => (
-                <div
-                  key={c.id}
-                  className={`chapter-item${selected?.id === c.id ? ' active' : ''}`}
-                  onClick={() => setSelectedId(c.id)}
-                >
-                  <span className="title">
-                    {i + 1}. {c.title || 'Sans titre'}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn-icon"
-                    title="Supprimer le chapitre"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      void removeChapter(c.id)
-                    }}
+      <div className={`novel-layout${focus ? ' focus' : ''}`}>
+        {!focus && (
+          <div className="panel">
+            <h2>Chapitres ({chapters?.length ?? 0})</h2>
+            {!chapters || chapters.length === 0 ? (
+              <p className="muted">Aucun chapitre.</p>
+            ) : (
+              <div className="chapter-list">
+                {chapters.map((c, i) => (
+                  <div
+                    key={c.id}
+                    className={`chapter-item${selected?.id === c.id ? ' active' : ''}`}
+                    onClick={() => setSelectedId(c.id)}
                   >
-                    🗑
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <span className="title">
+                      {i + 1}. {c.title || 'Sans titre'}
+                    </span>
+                    <span className="words">{wordCount(c.content)} mots</span>
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      title="Supprimer le chapitre"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        void removeChapter(c.id)
+                      }}
+                    >
+                      🗑
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {selected ? (
-          <div>
+          <div className="writing-sheet">
             <input
               type="text"
+              className="chapter-title"
               value={title}
               onChange={(e) => onTitle(e.target.value)}
               placeholder="Titre du chapitre"
-              style={{ fontWeight: 700, fontSize: 18, marginBottom: 12 }}
             />
-            <RichTextEditor content={content} onUpdate={onContent} placeholder="Écris ce chapitre ici…" />
+            <RichTextEditor
+              content={content}
+              onUpdate={onContent}
+              placeholder="Écris ce chapitre ici… respire, prends ton temps."
+              footer={
+                <>
+                  <span>
+                    {wordCount(content)} mot{wordCount(content) > 1 ? 's' : ''}
+                  </span>
+                  <span>✓ enregistré automatiquement</span>
+                </>
+              }
+            />
           </div>
         ) : (
           <div className="panel">
-            <p className="muted">Créez un chapitre pour commencer à écrire.</p>
+            <p className="muted">Créez un chapitre pour commencer à écrire. ✨</p>
           </div>
         )}
       </div>

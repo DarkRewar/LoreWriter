@@ -111,7 +111,7 @@ export default function DialogueEditorPage() {
       </div>
 
       {preview ? (
-        <div className="dialogue-preview">
+        <div key="preview" className="dialogue-preview view-anim">
           {draft.lines.length === 0 && <p className="muted">Aucune réplique pour l'instant.</p>}
           {draft.lines.map((l) => (
             <div key={l.id} className={`line${l.characterId ? '' : ' narrator'}`}>
@@ -121,7 +121,7 @@ export default function DialogueEditorPage() {
           ))}
         </div>
       ) : (
-        <div className="panel">
+        <div key="editor" className="panel view-anim">
           <h2>Répliques ({draft.lines.length})</h2>
           {draft.lines.map((l) => (
             <div className="line-row" key={l.id}>
