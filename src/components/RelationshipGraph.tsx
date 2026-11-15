@@ -5,7 +5,6 @@ import { characterDisplayName, type Character, type Relationship } from '../type
 import { relationshipTypeInfo } from '../lib/relationships'
 
 const stylesheet = [
-
   {
     selector: 'node',
     style: {
@@ -46,6 +45,37 @@ const stylesheet = [
   },
 ] as unknown as cytoscape.StylesheetStyle[]
 
+interface SavedPos {
+  id: string
+  x: number
+  y: number
+}
+
+const layoutKey = (projectId: string) => `lorewriter:graph-layout:${projectId}`
+
+function loadLayout(projectId: string): SavedPos[] {
+  try {
+    const raw = localStorage.getItem(layoutKey(projectId))
+    const parsed: unknown = raw ? JSON.parse(raw) : null
+    return Array.isArray(parsed) ? (parsed as SavedPos[]) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLayout(projectId: string, cy: cytoscape.Core): void {
+  const positions: SavedPos[] = []
+  cy.nodes().forEach((n) => {
+    const p = n.position()
+    positions.push({ id: n.id(), x: p.x, y: p.y })
+  })
+  try {
+    localStorage.setItem(layoutKey(projectId), JSON.stringify(positions))
+  } catch {
+    // stockage plein ou indisponible : on ignore, le layout restera déterministe
+  }
+}
+
 export function RelationshipGraph({
   characters,
   relationships,
@@ -69,9 +99,10 @@ export function RelationshipGraph({
       wheelSensitivity: 0.3,
     })
     cy.on('tap', 'node', (evt) => {
-      const id = evt.target.id()
-      navigate(`/projects/${projectId}/characters/${id}`)
+      navigate(`/projects/${projectId}/characters/${evt.target.id()}`)
     })
+    cy.on('dragfree', 'node', () => saveLayout(projectId, cy))
+    cy.on('layoutstop', () => saveLayout(projectId, cy))
     cyRef.current = cy
     return () => {
       cy.destroy()
@@ -82,12 +113,28 @@ export function RelationshipGraph({
   useEffect(() => {
     const cy = cyRef.current
     if (!cy) return
-    const nodes: cytoscape.ElementDefinition[] = characters.map((c) => ({
-      data: {
-        id: c.id,
-        label: characterDisplayName(c) + (c.nickname ? `\n« ${c.nickname} »` : ''),
-      },
-    }))
+    const saved = new Map(loadLayout(projectId).map((p) => [p.id, p]))
+    const allSaved = characters.length > 0 && characters.every((c) => saved.has(c.id))
+
+    const nodes: cytoscape.ElementDefinition[] = characters.map((c, i) => {
+      const el: cytoscape.ElementDefinition = {
+        data: {
+          id: c.id,
+          label: characterDisplayName(c) + (c.nickname ? `\n« ${c.nickname} »` : ''),
+        },
+      }
+      const p = saved.get(c.id)
+      if (p) {
+        el.position = { x: p.x, y: p.y }
+      } else if (!allSaved) {
+        // Position initiale déterministe (cercle) : le rendu ne change plus d'un rafraîchissement à l'autre.
+        const angle = (2 * Math.PI * i) / Math.max(characters.length, 1)
+        const radius = 80 + 30 * characters.length
+        el.position = { x: radius * Math.cos(angle), y: radius * Math.sin(angle) }
+      }
+      return el
+    })
+
     const edges: cytoscape.ElementDefinition[] = relationships
       .filter((r) => characters.some((c) => c.id === r.sourceId) && characters.some((c) => c.id === r.targetId))
       .map((r) => {
@@ -102,10 +149,14 @@ export function RelationshipGraph({
           },
         }
       })
+
     cy.elements().remove()
     cy.add([...nodes, ...edges])
-    cy.layout({ name: 'cose', animate: true, nodeRepulsion: 9000, idealEdgeLength: 150, padding: 30 } as cytoscape.LayoutOptions).run()
-  }, [characters, relationships])
+    const layout: cytoscape.LayoutOptions = allSaved
+      ? { name: 'preset' }
+      : ({ name: 'cose', animate: false, randomize: false, nodeRepulsion: 9000, idealEdgeLength: 150, padding: 30 } as cytoscape.LayoutOptions)
+    cy.layout(layout).run()
+  }, [characters, relationships, projectId])
 
   if (characters.length === 0) {
     return <p className="muted">Créez d'abord des personnages pour voir le diagramme.</p>
