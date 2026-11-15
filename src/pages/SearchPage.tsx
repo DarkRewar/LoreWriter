@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useProjectId } from '../hooks'
 import { searchProject } from '../lib/queries'
 import { SEARCH_KIND_LABELS, type SearchKind, type SearchResult } from '../lib/search'
 
 export default function SearchPage() {
   const projectId = useProjectId()
-  const [query, setQuery] = useState('')
+  const [searchParams] = useSearchParams()
+  const [query, setQuery] = useState(searchParams.get('q') ?? '')
   const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
+
+  useEffect(() => {
+    setQuery(searchParams.get('q') ?? '')
+  }, [searchParams])
 
   useEffect(() => {
     const q = query.trim()

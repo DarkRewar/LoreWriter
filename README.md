@@ -43,12 +43,23 @@ npm run build      # build de production dans dist/
 
 ## Déploiement automatique sur GitHub Pages (GitHub.io)
 
-Le dépôt publie automatiquement l'application sur **[https://darkrewar.github.io/LoreWriter/](https://darkrewar.github.io/LoreWriter/)** :
+L'application est publiée automatiquement sur **[https://darkrewar.github.io/LoreWriter/](https://darkrewar.github.io/LoreWriter/)**.
 
-- à chaque **release publiée** (tag `v*`, ex. `v0.1.0`), le workflow `.github/workflows/deploy-pages.yml` build
-  l'app (base `/LoreWriter/`) et la déploie sur GitHub Pages ;
-- déploiement manuel possible via l'onglet **Actions → « Deploy to GitHub Pages » → Run workflow** ;
-- GitHub Pages nécessite un dépôt **public** (plan gratuit) : le code ne contient aucun secret (app 100 % client-side).
+**Configuration initiale (2 clics, une seule fois) dans les réglages du dépôt `LoreWriter` :**
+
+1. **Settings → Danger Zone → Change visibility → Public** (obligatoire pour Pages sur un plan gratuit ; le code
+   ne contient aucun secret, c'est une app 100 % client-side) ;
+2. **Settings → Pages → Build and deployment → Source → « GitHub Actions »**.
+
+**Déploiement automatique ensuite**, à chaque :
+
+- **release publiée** (tag `v*`, ex. `v0.1.0` créé via l'UI « Releases » ou `git push origin v0.1.0`) — le workflow
+  `.github/workflows/deploy-pages.yml` build l'app (base `/LoreWriter/`, tests exécutés) et la déploie sur Pages ;
+- push d'un tag `v*` ;
+- lancement manuel via **Actions → « Deploy to GitHub Pages » → Run workflow**.
+
+Après la configuration initiale, si le premier run a eu lieu avant l'activation de Pages, relancez-le
+(**Actions → Re-run jobs**) ou poussez un nouveau tag.
 
 L'URL en HTTPS permet d'installer la PWA sur téléphone (« Ajouter à l'écran d'accueil ») et d'utiliser la synchro
 cloud WebDAV sans blocage de contenu mixte.
