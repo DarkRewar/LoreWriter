@@ -1,0 +1,11 @@
+[package]
+name = "lorewriter"
+version = "0.1.0"
+description = "LoreWriter — atelier de storytelling (app desktop Windows / macOS)"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }

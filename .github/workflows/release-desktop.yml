@@ -1,0 +1,95 @@
+name: Release desktop (Windows / macOS)
+
+# Branche des releases : tout push/merge sur `main` build les applications
+# standalone (Tauri) et publie une release GitHub `desktop-vX.Y.Z`.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Tests + build web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  desktop:
+    name: Build ${{ matrix.name }}
+    needs: web
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            rustTargets: x86_64-pc-windows-msvc
+            tauriTarget: x86_64-pc-windows-msvc
+            bundleGlob: 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*'
+          - name: macos-universal
+            os: macos-latest
+            rustTargets: x86_64-apple-darwin,aarch64-apple-darwin
+            tauriTarget: universal-apple-darwin
+            bundleGlob: 'src-tauri/target/universal-apple-darwin/release/bundle/**/*'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rustTargets }}
+      - run: npm ci
+      - name: Build de l'application standalone (Tauri)
+        run: npx tauri build --target ${{ matrix.tauriTarget }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lorewriter-${{ matrix.name }}
+          path: ${{ matrix.bundleGlob }}
+          if-no-files-found: error
+
+  release:
+    name: Publication de la release desktop
+    needs: desktop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: lorewriter-*
+          merge-multiple: true
+      - name: Version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v${{ steps.version.outputs.version }}
+          name: LoreWriter v${{ steps.version.outputs.version }} — applications desktop
+          body: |
+            Applications standalone de LoreWriter v${{ steps.version.outputs.version }}, buildées automatiquement depuis `main` :
+
+            - **Windows x64** (`lorewriter-windows-x64/`) : installeurs NSIS (.exe) et MSI (.msi)
+            - **macOS universel** (`lorewriter-macos-universal/`) : .dmg et .app (Intel + Apple Silicon)
+
+            Les données restent 100 % locales (IndexedDB) ; la synchro cloud WebDAV est optionnelle.
+          files: artifacts/**/*
+          draft: false
+          prerelease: false

@@ -73,6 +73,25 @@ Après la configuration initiale, si le premier run a eu lieu avant l'activation
 L'URL en HTTPS permet d'installer la PWA sur téléphone (« Ajouter à l'écran d'accueil ») et d'utiliser la synchro
 cloud WebDAV sans blocage de contenu mixte.
 
+## Applications standalone (Windows / macOS)
+
+L'application est packagée en natif avec **Tauri v2** (`src-tauri/`) : le build web (`dist/`) est embarqué dans une
+webview native ; les données restent 100 % locales (IndexedDB), la synchro cloud WebDAV restant optionnelle.
+
+```bash
+npm run desktop:dev     # app desktop en mode dev (hot-reload Vite) — nécessite Rust installé
+npm run desktop:build   # installeur natif pour l'OS courant — nécessite Rust installé
+```
+
+En CI, à chaque **push sur `main`**, le workflow `.github/workflows/release-desktop.yml` build les installeurs
+**Windows x64** (NSIS `.exe` + MSI) et **macOS universel** (`.dmg`/`.app`, Intel + Apple Silicon) et publie une
+release GitHub `desktop-vX.Y.Z` contenant les artefacts. Le préfixe `desktop-v*` ne déclenche pas le déploiement
+Pages (réservé aux tags `v*`). Le workflow peut aussi être lancé à la main (Actions → Run workflow).
+
+La version de l'app desktop se lit dans `package.json` (`version`) et `src-tauri/tauri.conf.json` : à bump
+ensemble à chaque release. Les icônes (`src-tauri/icons/`) se régénèrent depuis un PNG 1024×1024 avec
+`npx tauri icon <fichier.png>`.
+
 ## Héberger l'application soi-même (Docker)
 
 L'application est une SPA statique : servez le contenu de `dist/` avec n'importe quel serveur web.
@@ -124,6 +143,8 @@ src/
     queries.ts           # opérations haut niveau (créer/supprimer/dupliquer/importer…)
   components/            # TagInput, MetadataEditor, PortraitPicker, graphe Cytoscape, éditeur TipTap…
   pages/                 # une page par fonctionnalité
+src-tauri/               # packaging desktop Tauri v2 (Cargo.toml, tauri.conf.json, icônes, main.rs)
+.github/workflows/       # ci.yml (main + develop + PR) ; release-desktop.yml (build desktop sur push main) ; deploy-pages.yml
 ```
 
 ## Stack
@@ -131,18 +152,20 @@ src/
 React 18 + TypeScript + Vite, React Router, Dexie (IndexedDB), TipTap (éditeur riche), Cytoscape (diagramme de
 relations), vite-plugin-pwa (PWA), Vitest (tests). Aucune dépendance serveur : la donnée appartient à l'utilisateur.
 
-## Workflow Git (gitflow simplifié, branche par défaut : `main`)
+## Workflow Git (gitflow : `develop` = itération, `main` = releases)
 
-- **`main` est la branche par défaut et de référence** (protégée recommandée : Settings → Branches → règle sur
-  `main` : PR obligatoire + checks CI requis).
-- **Nouveau travail** : toujours partir de `main` à jour —
-  `git checkout main && git pull && git checkout -b feature/<sujet>` (ou `fix/<sujet>`).
-- **Pendant le travail** : commits sur la branche de fonctionnalité, push régulier, PR vers `main` quand prêt
-  (voir `.github/PULL_REQUEST_TEMPLATE.md`).
-- **Avant de merger** : rebase puis merge — `git fetch origin && git rebase origin/main`, résoudre les conflits,
-  `git push --force-with-lease`, attendre la CI verte, puis merger (fast-forward après rebase = historique linéaire ;
-  squash possible si préféré).
-- **Après le merge** : supprimer la branche de fonctionnalité (localement et sur le distant).
-- **Releases** : tag `vX.Y.Z` poussé depuis `main` (ou release publiée dans l'UI) → déploiement automatique sur
-  GitHub Pages (voir section « Déploiement automatique sur GitHub Pages »).
-- **Branches** : `main` (défaut) + branches de fonctionnalité temporaires `feature/**`, `fix/**`.
+- **`develop`** : branche d'itération. Toutes les branches de fonctionnalité partent de `develop` à jour et les PR
+  y sont mergées (protéger `develop` comme `main` : Settings → Branches → PR obligatoire + checks CI requis).
+- **`main`** : branche des **releases**. Chaque push/merge sur `main` déclenche automatiquement la **build des
+  applications desktop** Windows/macOS (workflow `.github/workflows/release-desktop.yml`, release `desktop-vX.Y.Z`).
+  La CI (typecheck + tests + build) tourne sur `main`, `develop` et les PR vers ces deux branches.
+- **Nouveau travail** : `git checkout develop && git pull && git checkout -b feature/<sujet>` (ou `fix/<sujet>`),
+  puis PR vers `develop` quand prêt (voir `.github/PULL_REQUEST_TEMPLATE.md`).
+- **Avant de merger une feature** : rebase sur `develop` — `git fetch origin && git rebase origin/develop`, résoudre
+  les conflits, `git push --force-with-lease`, attendre la CI verte, puis merger (fast-forward après rebase =
+  historique linéaire ; squash possible si préféré). Après le merge, supprimer la branche de fonctionnalité
+  (localement et sur le distant).
+- **Release d'une version** : PR `develop` → `main` (review + CI verte) ; le push sur `main` build et publie les
+  applications standalone. Le déploiement GitHub Pages reste déclenché par les tags `v*` poussés depuis `main`
+  (voir section « Déploiement automatique sur GitHub Pages »).
+- **Branches** : `develop` (itération) + `main` (releases) + branches temporaires `feature/**`, `fix/**`, `vibe/**`.
