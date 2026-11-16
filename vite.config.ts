@@ -9,6 +9,11 @@ const base = process.env.LOREWRITER_BASE ?? '/'
 
 export default defineConfig({
   base,
+  server: {
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
+  },
   plugins: [
     react(),
     VitePWA({
