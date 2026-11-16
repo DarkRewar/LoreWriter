@@ -1,8 +1,8 @@
-import { characterDisplayName, type Chapter, type Character, type DialogueScene, type Plot, type Relationship } from '../types'
+import { characterDisplayName, type Chapter, type Character, type DialogueScene, type Novel, type Plot, type Relationship } from '../types'
 import { relationshipTypeInfo } from './relationships'
 import { makeSnippet, normalizeForSearch, stripHtml } from './text'
 
-export type SearchKind = 'character' | 'relationship' | 'dialogue' | 'chapter' | 'plot'
+export type SearchKind = 'character' | 'relationship' | 'dialogue' | 'novel' | 'chapter' | 'plot'
 
 export interface SearchResult {
   kind: SearchKind
@@ -20,6 +20,7 @@ export interface SearchInput {
   characters: Character[]
   relationships: Relationship[]
   dialogueScenes: DialogueScene[]
+  novels: Novel[]
   chapters: Chapter[]
   plots: Plot[]
 }
@@ -51,6 +52,7 @@ export const SEARCH_KIND_LABELS: Record<SearchKind, string> = {
   character: 'Personnage',
   relationship: 'Relation',
   dialogue: 'Dialogue',
+  novel: 'Roman',
   chapter: 'Chapitre',
   plot: 'Intrigue',
 }
@@ -165,11 +167,34 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
     }
   }
 
+  const novelTitle = (id: string): string => {
+    const n = input.novels.find((x) => x.id === id)
+    return n ? n.title : ''
+  }
+
+  for (const n of input.novels) {
+    const { score, matchedText } = scoreFields([{ text: n.title, weight: 10 }], q)
+    if (score > 0) {
+      const count = input.chapters.filter((c) => c.novelId === n.id).length
+      results.push({
+        kind: 'novel',
+        id: n.id,
+        title: n.title || 'Roman sans titre',
+        subtitle: `${count} chapitre(s)`,
+        snippet: makeSnippet(matchedText || n.title, q),
+        score,
+        path: `novel?novel=${n.id}`,
+      })
+    }
+  }
+
   for (const ch of input.chapters) {
     const plain = stripHtml(ch.content)
+    const novel = novelTitle(ch.novelId ?? '')
     const { score, matchedText } = scoreFields(
       [
         { text: ch.title, weight: 10 },
+        { text: novel, weight: 4 },
         { text: plain, weight: 2 },
       ],
       q,
@@ -179,10 +204,10 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
         kind: 'chapter',
         id: ch.id,
         title: ch.title || 'Chapitre sans titre',
-        subtitle: 'Roman',
+        subtitle: novel ? `Roman · ${novel}` : 'Roman',
         snippet: makeSnippet(matchedText || plain, q),
         score,
-        path: 'novel',
+        path: `novel?novel=${ch.novelId ?? ''}`,
       })
     }
   }

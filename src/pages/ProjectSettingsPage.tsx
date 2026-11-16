@@ -16,14 +16,15 @@ export default function ProjectSettingsPage() {
 
   const stats = useLiveQuery(async () => {
     const pid = projectId
-    const [characters, relationships, dialogueScenes, chapters, plots] = await Promise.all([
+    const [characters, relationships, dialogueScenes, novels, chapters, plots] = await Promise.all([
       db.characters.where('projectId').equals(pid).count(),
       db.relationships.where('projectId').equals(pid).count(),
       db.dialogueScenes.where('projectId').equals(pid).count(),
+      db.novels.where('projectId').equals(pid).count(),
       db.chapters.where('projectId').equals(pid).count(),
       db.plots.where('projectId').equals(pid).count(),
     ])
-    return { characters, relationships, dialogueScenes, chapters, plots }
+    return { characters, relationships, dialogueScenes, novels, chapters, plots }
   }, [projectId])
 
   if (!project) return null
@@ -100,7 +101,7 @@ export default function ProjectSettingsPage() {
         {stats && (
           <p className="muted">
             Contenu : {stats.characters} personnage(s), {stats.relationships} relation(s), {stats.dialogueScenes} scène(s)
-            de dialogue, {stats.chapters} chapitre(s), {stats.plots} intrigue(s).
+            de dialogue, {stats.novels} roman(s), {stats.chapters} chapitre(s), {stats.plots} intrigue(s).
           </p>
         )}
       </div>

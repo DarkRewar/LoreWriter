@@ -70,6 +70,7 @@ describe('fichier chapitre (.md avec frontmatter)', () => {
   const chapter = (over: Partial<Chapter> = {}): Chapter => ({
     id: 'ch1',
     projectId: 'p1',
+    novelId: 'n1',
     title: 'Chapitre 1 : "La fuite"',
     content: '<h2>Départ</h2><p>Elle prit son sac et <strong>partit</strong>.</p>',
     order: 2,
@@ -87,6 +88,7 @@ describe('fichier chapitre (.md avec frontmatter)', () => {
     const back = parseChapterFile(file)
     expect(back.id).toBe('ch1')
     expect(back.projectId).toBe('p1')
+    expect(back.novelId).toBe('n1')
     expect(back.title).toBe('Chapitre 1 : "La fuite"')
     expect(back.order).toBe(2)
     expect(back.createdAt).toBe(100)

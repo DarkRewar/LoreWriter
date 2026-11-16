@@ -1,8 +1,8 @@
-import type { Chapter, Character, DialogueScene, Plot, Project, Relationship } from '../types'
+import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relationship } from '../types'
 import { newId } from './ids'
 
 export const SNAPSHOT_FORMAT = 'lorewriter-snapshot'
-export const SNAPSHOT_VERSION = 1
+export const SNAPSHOT_VERSION = 2
 
 export interface ProjectSnapshot {
   format: typeof SNAPSHOT_FORMAT
@@ -12,6 +12,7 @@ export interface ProjectSnapshot {
   characters: Character[]
   relationships: Relationship[]
   dialogueScenes: DialogueScene[]
+  novels: Novel[]
   chapters: Chapter[]
   plots: Plot[]
 }
@@ -41,7 +42,22 @@ export function parseSnapshot(json: string): ProjectSnapshot {
   for (const key of ['characters', 'relationships', 'dialogueScenes', 'chapters', 'plots'] as const) {
     if (!Array.isArray(d[key])) throw new Error(`Snapshot invalide : « ${key} » manquant.`)
   }
-  return data as ProjectSnapshot
+  const snap = data as ProjectSnapshot
+  snap.novels = Array.isArray(d.novels) ? (d.novels as Novel[]) : []
+  return normalizeSnapshot(snap)
+}
+
+/** Normalise un snapshot : les chapitres sans roman sont rattachés à un roman « Roman » créé au besoin. */
+export function normalizeSnapshot(snap: ProjectSnapshot): ProjectSnapshot {
+  if (snap.chapters.every((c) => c.novelId)) return snap
+  const now = Date.now()
+  const novelId = newId()
+  const fallback: Novel = { id: novelId, projectId: snap.project.id, title: 'Roman', createdAt: now, updatedAt: now }
+  return {
+    ...snap,
+    novels: [...(snap.novels ?? []), fallback],
+    chapters: snap.chapters.map((c) => ({ ...c, novelId: c.novelId || novelId })),
+  }
 }
 
 type Entity = { id: string; updatedAt: number }
@@ -66,6 +82,7 @@ export function mergeSnapshots(local: ProjectSnapshot, remote: ProjectSnapshot):
     characters: mergeList(local.characters, remote.characters),
     relationships: mergeList(local.relationships, remote.relationships),
     dialogueScenes: mergeList(local.dialogueScenes, remote.dialogueScenes),
+    novels: mergeList(local.novels ?? [], remote.novels ?? []),
     chapters: mergeList(local.chapters, remote.chapters),
     plots: mergeList(local.plots, remote.plots),
   }
@@ -112,10 +129,18 @@ export function remapSnapshotIds(s: ProjectSnapshot, newProjectId: string, now =
       createdAt: now,
       updatedAt: now,
     })),
+    novels: (s.novels ?? []).map((n) => ({
+      ...n,
+      id: remap(n.id),
+      projectId: newProjectId,
+      createdAt: now,
+      updatedAt: now,
+    })),
     chapters: s.chapters.map((c) => ({
       ...c,
       id: remap(c.id),
       projectId: newProjectId,
+      novelId: remap(c.novelId ?? ''),
       createdAt: now,
       updatedAt: now,
     })),

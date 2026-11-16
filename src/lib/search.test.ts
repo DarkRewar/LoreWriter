@@ -25,6 +25,7 @@ const input = (over: Partial<SearchInput> = {}): SearchInput => ({
   characters: [],
   relationships: [],
   dialogueScenes: [],
+  novels: [],
   chapters: [],
   plots: [],
   ...over,
@@ -112,14 +113,26 @@ describe('searchEntities', () => {
   it('retrouve du texte dans un chapitre (HTML nettoyé)', () => {
     const res = searchEntities(
       input({
+        novels: [{ id: 'n1', projectId: 'p1', title: 'Mon premier roman', createdAt: 1, updatedAt: 1 }],
         chapters: [
-          { id: 'ch1', projectId: 'p1', title: 'Chapitre 1', content: '<p>La <em>forêt</em> bruissait.</p>', order: 0, createdAt: 1, updatedAt: 1 },
+          { id: 'ch1', projectId: 'p1', novelId: 'n1', title: 'Chapitre 1', content: '<p>La <em>forêt</em> bruissait.</p>', order: 0, createdAt: 1, updatedAt: 1 },
         ],
       }),
       'foret',
     )
     expect(res[0]?.kind).toBe('chapter')
     expect(res[0]?.snippet).toContain('forêt')
+    expect(res[0]?.path).toBe('novel?novel=n1')
+    expect(res[0]?.subtitle).toContain('Mon premier roman')
+  })
+
+  it('retrouve un roman par son titre', () => {
+    const res = searchEntities(
+      input({ novels: [{ id: 'n1', projectId: 'p1', title: 'La Cité engloutie', createdAt: 1, updatedAt: 1 }] }),
+      'cité',
+    )
+    expect(res.map((r) => r.kind)).toEqual(['novel'])
+    expect(res[0].path).toBe('novel?novel=n1')
   })
 
   it('retrouve une intrigue par son titre', () => {

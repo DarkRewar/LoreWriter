@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import TopbarSearch from './components/TopbarSearch'
+import SaveButton from './components/SaveButton'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectLayout from './pages/ProjectLayout'
 import DashboardPage from './pages/DashboardPage'
@@ -24,6 +25,7 @@ export default function App() {
           ✒️ LoreWriter
         </Link>
         <TopbarSearch />
+        <SaveButton />
         <nav className="app-nav">
           <Link to="/">Projets</Link>
           <Link to="/cloud">☁️ Cloud</Link>
