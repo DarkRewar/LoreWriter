@@ -128,7 +128,7 @@ a:hover { color: var(--accent-strong); }
 .muted { color: var(--muted); }
 
 /* ---------- recherche topbar ---------- */
-.save-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.save-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; margin-left: auto; }
 .save-btn { font-size: 17px; }
 .save-msg {
   position: absolute;
