@@ -79,9 +79,19 @@ export interface DialogueScene {
   updatedAt: number
 }
 
+export interface Novel {
+  id: string
+  projectId: string
+  title: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface Chapter {
   id: string
   projectId: string
+  /** Roman auquel appartient le chapitre. */
+  novelId: string
   title: string
   /** Contenu riche au format HTML (éditeur TipTap). */
   content: string

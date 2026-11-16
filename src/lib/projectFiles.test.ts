@@ -21,6 +21,7 @@ const project = (over: Partial<Project> = {}): Project => ({
 const chapter = (over: Partial<Chapter> = {}): Chapter => ({
   id: 'ch1',
   projectId: 'p1',
+  novelId: 'n1',
   title: 'Chapitre 1',
   content: '<p>Il était <strong>une fois</strong>.</p>',
   order: 0,
@@ -49,6 +50,7 @@ const snap = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
   characters: [],
   relationships: [],
   dialogueScenes: [scene()],
+  novels: [{ id: 'n1', projectId: 'p1', title: 'Roman', createdAt: 1, updatedAt: 1 }],
   chapters: [chapter()],
   plots: [{ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c1'], createdAt: 1, updatedAt: 1 }],
   ...over,

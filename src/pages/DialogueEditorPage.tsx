@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useParams } from 'react-router-dom'
 import { db } from '../db'
-import { useProjectId } from '../hooks'
+import { useProjectId, useSaveFlush } from '../hooks'
 import { newId } from '../lib/ids'
 import type { DialogueLine, DialogueScene } from '../types'
 import { characterDisplayName } from '../types'
@@ -37,19 +37,39 @@ export default function DialogueEditorPage() {
     if (scene) setDraft({ ...scene, lines: scene.lines.map((l) => ({ ...l })) })
   }, [scene])
 
-  const save = useMemo(
-    () => {
-      let timer: ReturnType<typeof setTimeout> | undefined
-      return (next: DialogueScene) => {
-        setDraft(next)
-        clearTimeout(timer)
-        timer = setTimeout(async () => {
-          await db.dialogueScenes.put({ ...next, updatedAt: Date.now() })
-          await db.projects.update(projectId, { updatedAt: Date.now() })
-        }, 300)
-      }
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingRef = useRef<DialogueScene | null>(null)
+  const writeScene = useCallback(
+    async (s: DialogueScene) => {
+      await db.dialogueScenes.put({ ...s, updatedAt: Date.now() })
+      await db.projects.update(projectId, { updatedAt: Date.now() })
     },
     [projectId],
+  )
+  const flush = useCallback(() => {
+    clearTimeout(timerRef.current)
+    const p = pendingRef.current
+    if (p) {
+      pendingRef.current = null
+      void writeScene(p)
+    }
+  }, [writeScene])
+  useSaveFlush(flush)
+
+  const save = useCallback(
+    (next: DialogueScene) => {
+      setDraft(next)
+      pendingRef.current = next
+      clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
+        const p = pendingRef.current
+        if (p) {
+          pendingRef.current = null
+          void writeScene(p)
+        }
+      }, 300)
+    },
+    [writeScene],
   )
 
   if (!scene || !draft) {

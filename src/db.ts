@@ -1,11 +1,13 @@
 import Dexie, { type Table } from 'dexie'
-import type { Chapter, Character, DialogueScene, Plot, Project, Relationship } from './types'
+import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relationship } from './types'
+import { newId } from './lib/ids'
 
 export class LoreWriterDB extends Dexie {
   projects!: Table<Project, string>
   characters!: Table<Character, string>
   relationships!: Table<Relationship, string>
   dialogueScenes!: Table<DialogueScene, string>
+  novels!: Table<Novel, string>
   chapters!: Table<Chapter, string>
   plots!: Table<Plot, string>
 
@@ -31,6 +33,23 @@ export class LoreWriterDB extends Dexie {
             if (!s.plotId) s.plotId = ''
           }),
       )
+    this.version(3)
+      .stores({
+        novels: 'id, projectId, title, updatedAt',
+        chapters: 'id, projectId, novelId, order, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        const projects = await tx.table('projects').toArray()
+        const novels = tx.table('novels')
+        const chapters = tx.table('chapters')
+        for (const p of projects) {
+          const novelId = newId()
+          await novels.add({ id: novelId, projectId: p.id, title: 'Roman', createdAt: p.createdAt, updatedAt: p.updatedAt })
+          await chapters.where('projectId').equals(p.id).modify((c) => {
+            if (!c.novelId) c.novelId = novelId
+          })
+        }
+      })
   }
 }
 

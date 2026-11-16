@@ -10,15 +10,16 @@ export default function DashboardPage() {
   const project = useProject()
   const stats = useLiveQuery(async () => {
     const pid = projectId
-    const [characters, relationships, dialogueScenes, chapters, plots] = await Promise.all([
+    const [characters, relationships, dialogueScenes, novels, chapters, plots] = await Promise.all([
       db.characters.where('projectId').equals(pid).count(),
       db.relationships.where('projectId').equals(pid).count(),
       db.dialogueScenes.where('projectId').equals(pid).count(),
+      db.novels.where('projectId').equals(pid).count(),
       db.chapters.where('projectId').equals(pid).count(),
       db.plots.where('projectId').equals(pid).count(),
     ])
     const recent = await db.characters.where('projectId').equals(pid).sortBy('updatedAt')
-    return { characters, relationships, dialogueScenes, chapters, plots, recent: recent.reverse().slice(0, 5) }
+    return { characters, relationships, dialogueScenes, novels, chapters, plots, recent: recent.reverse().slice(0, 5) }
   }, [projectId])
 
   if (!project) return null
@@ -43,8 +44,8 @@ export default function DashboardPage() {
           <div className="counts">{stats?.dialogueScenes ?? '…'} scène(s)</div>
         </Link>
         <Link className="project-card" to={`${base}/novel`}>
-          <h3>📖 Roman</h3>
-          <div className="counts">{stats?.chapters ?? '…'} chapitre(s)</div>
+          <h3>📖 Romans</h3>
+          <div className="counts">{stats?.novels ?? '…'} roman(s) · {stats?.chapters ?? '…'} chapitre(s)</div>
         </Link>
         <Link className="project-card" to={`${base}/plots`}>
           <h3>🧩 Intrigues</h3>

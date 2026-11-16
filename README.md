@@ -16,12 +16,16 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   pour ouvrir la fiche du personnage).
 - **Éditeur de dialogues** : scènes composées de répliques attribuées à chaque personnage (ou au narrateur), avec
   aperçu mis en page, et **reliées à une intrigue** (optionnel) — retrouvables depuis la fiche de l'intrigue.
-- **Éditeur de roman** : chapitres avec éditeur de texte riche (gras, italique, titres, listes, citations…),
-  compteur de mots. Chaque chapitre peut être téléchargé individuellement en **Markdown** (`*.md`) et est
-  sauvegardé comme un **fichier dédié** dans les exports multi-fichiers et la synchro cloud.
+- **Éditeur de roman** : **plusieurs romans par projet**, chapitres avec éditeur de texte riche (gras, italique,
+  titres, listes, citations…), compteur de mots, et une zone d'écriture qui reste **contenue dans l'écran** (scroll
+  interne, utile dans l'app desktop). Chaque chapitre peut être téléchargé individuellement en **Markdown**
+  (`*.md`) et est sauvegardé comme un **fichier dédié** dans les exports multi-fichiers et la synchro cloud.
 - **Intrigues** : titre, synopsis, statut, tags et personnages impliqués.
-- **Recherche globale** instantanée sur tout le projet (personnages, relations, répliques, chapitres, intrigues),
-  insensible à la casse et aux accents, avec extraits — **Ctrl+Espace** pour focus la barre de recherche.
+- **Recherche globale** instantanée sur tout le projet (personnages, relations, répliques, romans, chapitres,
+  intrigues), insensible à la casse et aux accents, avec extraits — **Ctrl+Espace** pour focus la barre de
+  recherche.
+- **Enregistrement manuel** : bouton 💾 (disquette) dans la barre du haut et **Ctrl+S** (Cmd+S sur macOS) — vide
+  les tampons d'écriture et pousse vers le cloud si la synchro WebDAV est activée, sinon enregistre localement.
 - **Cloud** : stockage local d'abord (IndexedDB, fonctionne hors ligne, PWA installable), puis **synchronisation
   automatique** vers un serveur **WebDAV** (Nextcloud/ownCloud…) : la sauvegarde de chaque projet se fait sur
   **plusieurs fichiers** — un fichier de base `project.json`, un fichier `chapters/<id>.md` (Markdown) par chapitre
@@ -103,7 +107,7 @@ automatiquement migré vers ce format multi-fichiers.
 
 ```
 src/
-  types.ts               # modèle de données (Project, Character, Relationship, DialogueScene, Chapter, Plot)
+  types.ts               # modèle de données (Project, Character, Relationship, DialogueScene, Novel, Chapter, Plot)
   db.ts                  # base IndexedDB (Dexie)
   lib/
     text.ts              # normalisation recherche (accents), HTML → texte, extraits

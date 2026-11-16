@@ -38,10 +38,12 @@ const snap = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
       updatedAt: 5,
     } as DialogueScene,
   ],
+  novels: [{ id: 'n1', projectId: 'p1', title: 'Roman', createdAt: 1, updatedAt: 1 }],
   chapters: [
     {
       id: 'ch1',
       projectId: 'p1',
+      novelId: 'n1',
       title: 'Chapitre 1 : l’été',
       content: '<h2>Départ</h2><p>Elle <strong>partit</strong> à l’aube.</p>',
       order: 0,

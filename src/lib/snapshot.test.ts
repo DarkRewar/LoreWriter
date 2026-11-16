@@ -13,12 +13,13 @@ const project = (over: Partial<Project> = {}): Project => ({
 
 const baseSnapshot = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
   format: SNAPSHOT_FORMAT,
-  version: 1,
+  version: 2,
   exportedAt: 1,
   project: project(),
   characters: [],
   relationships: [],
   dialogueScenes: [],
+  novels: [],
   chapters: [],
   plots: [],
   ...over,
@@ -89,6 +90,8 @@ describe('remapSnapshotIds', () => {
           updatedAt: 1,
         },
       ],
+      novels: [{ id: 'n1', projectId: 'p1', title: 'Roman', createdAt: 1, updatedAt: 1 }],
+      chapters: [{ id: 'ch1', projectId: 'p1', novelId: 'n1', title: 'Chapitre 1', content: '<p>x</p>', order: 0, createdAt: 1, updatedAt: 1 }],
       plots: [{ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c2'], createdAt: 1, updatedAt: 1 }],
     })
     const copy = remapSnapshotIds(snap, 'p2', 999)
@@ -102,6 +105,20 @@ describe('remapSnapshotIds', () => {
     expect(copy.dialogueScenes[0].lines[0].characterId).toBe(c1new.id)
     expect(copy.dialogueScenes[0].lines[1].characterId).toBe('') // narrateur inchangé
     expect(copy.dialogueScenes[0].plotId).toBe(pl1new)
+    expect(copy.novels[0].projectId).toBe('p2')
+    expect(copy.chapters[0].novelId).toBe(copy.novels[0].id)
     expect(copy.plots[0].characterIds).toEqual([c2new.id])
+  })
+
+  it('normalise un vieux snapshot sans romans (v1) en créant un roman par défaut', () => {
+    const old = baseSnapshot({
+      version: 1,
+      chapters: [{ id: 'ch1', projectId: 'p1', title: 'C1', content: '', order: 0, createdAt: 1, updatedAt: 1 } as never],
+    })
+    delete (old as Partial<ProjectSnapshot>).novels
+    const parsed = parseSnapshot(serializeSnapshot(old))
+    expect(parsed.novels).toHaveLength(1)
+    expect(parsed.novels[0].title).toBe('Roman')
+    expect(parsed.chapters[0].novelId).toBe(parsed.novels[0].id)
   })
 })

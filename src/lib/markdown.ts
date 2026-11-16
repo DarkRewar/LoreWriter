@@ -269,6 +269,7 @@ export function serializeChapterFile(ch: Chapter): string {
   const meta = [
     `id: ${JSON.stringify(ch.id)}`,
     `projectId: ${JSON.stringify(ch.projectId)}`,
+    `novelId: ${JSON.stringify(ch.novelId ?? '')}`,
     `title: ${JSON.stringify(ch.title)}`,
     `order: ${String(ch.order)}`,
     `createdAt: ${String(ch.createdAt)}`,
@@ -307,6 +308,7 @@ export function parseChapterFile(text: string): Chapter {
   return {
     id,
     projectId: str('projectId'),
+    novelId: str('novelId'),
     title: str('title'),
     order: num('order'),
     content: markdownToHtml(text.slice(m[0].length)),
