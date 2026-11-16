@@ -3,8 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../db'
 import { useProject, useProjectId } from '../hooks'
-import { deleteProject, downloadFile, downloadJson, exportProjectLore, exportProjectJson, importProjectJson, importProjectLore } from '../lib/queries'
+import { deleteProject, downloadFile, exportProjectLore, importProjectLore } from '../lib/queries'
 import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
+import { saveFileNative } from '../lib/desktop'
 
 export default function ProjectSettingsPage() {
   const projectId = useProjectId()
@@ -37,14 +38,21 @@ export default function ProjectSettingsPage() {
     setName(null)
   }
 
-  const onExport = async () => {
-    const json = await exportProjectJson(projectId)
-    downloadJson(`${project.name.replace(/[^\w-]+/g, '_')}.lorewriter.json`, json)
-  }
-
   const onExportLore = async () => {
     const bytes = await exportProjectLore(projectId)
-    downloadFile(`${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`, bytes, LORE_MIME)
+    const filename = `${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`
+    try {
+      const res = await saveFileNative(filename, bytes, 'Projet LoreWriter (.lore)', ['lore'])
+      if (res === 'saved') {
+        setMessage(`Projet exporté : ${filename}`)
+        return
+      }
+      if (res === 'cancelled') return
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Export impossible.")
+      return
+    }
+    downloadFile(filename, bytes, LORE_MIME)
   }
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -52,9 +60,8 @@ export default function ProjectSettingsPage() {
     if (!file) return
     try {
       const buf = new Uint8Array(await file.arrayBuffer())
-      const id = looksLikeLoreFile(file.name, buf)
-        ? await importProjectLore(buf)
-        : await importProjectJson(new TextDecoder().decode(buf))
+      if (!looksLikeLoreFile(file.name, buf)) throw new Error('Sélectionnez un fichier .lore (archive du projet).')
+      const id = await importProjectLore(buf)
       setMessage('Projet importé avec succès.')
       navigate(`/projects/${id}`)
     } catch (err) {
@@ -113,19 +120,16 @@ export default function ProjectSettingsPage() {
           sauvegarde du projet découpée en plusieurs fichiers — <code>project.json</code> (fichier de base : projet,
           personnages, relations, intrigues), un fichier <code>.md</code> dédié par chapitre et un fichier{' '}
           <code>.json</code> par scène de dialogue. C'est le même découpage que la synchronisation cloud, empaqueté
-          dans un seul fichier ouvrable avec n'importe quel outil ZIP. Un export <code>.json</code> plat reste
-          disponible.
+          dans un seul fichier ouvrable avec n'importe quel outil ZIP. Dans l'app desktop, une fenêtre native
+          (Explorateur/Finder) vous demande où enregistrer le fichier.
         </p>
         <div className="btn-row">
           <button type="button" className="btn btn-primary" onClick={onExportLore}>
             📦 Exporter le projet (.lore)
           </button>
-          <button type="button" className="btn" onClick={onExport}>
-            ⬇️ Exporter le projet (.json)
-          </button>
           <label className="btn">
-            ⬆️ Importer un projet (.lore ou .json)
-            <input type="file" accept=".lore,.json,application/json,application/zip" hidden onChange={onImport} />
+            ⬆️ Importer un projet (.lore)
+            <input type="file" accept=".lore,application/zip" hidden onChange={onImport} />
           </label>
         </div>
       </div>

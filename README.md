@@ -31,9 +31,10 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   **plusieurs fichiers** — un fichier de base `project.json`, un fichier `chapters/<id>.md` (Markdown) par chapitre
   et un fichier `dialogues/<id>.json` par scène de dialogue — fusionnés entité par entité (la modification la plus
   récente gagne).
-- **Export / import** de projet en **un seul fichier `.lore`** : une archive ZIP (ouvrable avec n'importe quel outil)
-  qui contient la sauvegarde découpée en plusieurs fichiers — `project.json` (base), `chapters/<id>.md` et
-  `dialogues/<id>.json`, identique au format cloud. Un export `.json` plat reste disponible.
+- **Export / import** de projet en **un seul fichier `.lore`** (seul format proposé dans l'app) : une archive ZIP
+  (ouvrable avec n'importe quel outil) qui contient la sauvegarde découpée en plusieurs fichiers — `project.json`
+  (base), `chapters/<id>.md` et `dialogues/<id>.json`, identique au format cloud. Dans l'**app desktop**, l'export
+  ouvre une fenêtre native (Explorateur/Finder) pour choisir l'emplacement du fichier.
 
 ## Démarrage en développement
 

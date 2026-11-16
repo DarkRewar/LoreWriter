@@ -6,11 +6,13 @@ import type { Project } from '../types'
 import {
   createProject,
   deleteProject,
-  downloadJson,
+  downloadFile,
   duplicateProject,
-  exportProjectJson,
-  importProjectJson,
+  exportProjectLore,
+  importProjectLore,
 } from '../lib/queries'
+import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
+import { saveFileNative } from '../lib/desktop'
 
 function ProjectCard({ project }: { project: Project }) {
   const navigate = useNavigate()
@@ -27,8 +29,15 @@ function ProjectCard({ project }: { project: Project }) {
   }, [project.id])
 
   const onExport = async () => {
-    const json = await exportProjectJson(project.id)
-    downloadJson(`${project.name.replace(/[^\w-]+/g, '_')}.lorewriter.json`, json)
+    const bytes = await exportProjectLore(project.id)
+    const filename = `${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`
+    try {
+      const res = await saveFileNative(filename, bytes, 'Projet LoreWriter (.lore)', ['lore'])
+      if (res !== 'unsupported') return
+    } catch {
+      // retombe sur le téléchargement navigateur
+    }
+    downloadFile(filename, bytes, LORE_MIME)
   }
 
   const onDuplicate = async () => {
@@ -63,7 +72,7 @@ function ProjectCard({ project }: { project: Project }) {
           Dupliquer
         </button>
         <button type="button" className="btn" onClick={onExport}>
-          Exporter (.json)
+          Exporter (.lore)
         </button>
         <button type="button" className="btn btn-danger" onClick={onDelete}>
           Supprimer
@@ -94,7 +103,9 @@ export default function ProjectsPage() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const id = await importProjectJson(await file.text())
+      const buf = new Uint8Array(await file.arrayBuffer())
+      if (!looksLikeLoreFile(file.name, buf)) throw new Error('Sélectionnez un fichier .lore (archive du projet).')
+      const id = await importProjectLore(buf)
       navigate(`/projects/${id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import impossible.')
@@ -122,8 +133,8 @@ export default function ProjectsPage() {
               Créer le projet
             </button>
             <label className="btn">
-              Importer un projet (.json)
-              <input type="file" accept="application/json,.json" hidden onChange={onImport} />
+              Importer un projet (.lore)
+              <input type="file" accept=".lore,application/zip" hidden onChange={onImport} />
             </label>
           </div>
         </form>
