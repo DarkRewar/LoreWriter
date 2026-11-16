@@ -80,9 +80,11 @@ export default function RelationshipsPage() {
       </div>
 
       {view === 'graph' ? (
-        <RelationshipGraph characters={characters ?? []} relationships={relationships ?? []} projectId={projectId} />
+        <div key="graph" className="view-anim">
+          <RelationshipGraph characters={characters ?? []} relationships={relationships ?? []} projectId={projectId} />
+        </div>
       ) : (
-        <>
+        <div key="list" className="view-anim">
           <div className="panel">
             <h2>Ajouter une relation</h2>
             <form className="rel-form" onSubmit={addRelationship}>
@@ -170,7 +172,7 @@ export default function RelationshipsPage() {
               </table>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   )

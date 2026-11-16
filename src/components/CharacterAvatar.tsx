@@ -23,7 +23,7 @@ export function CharacterAvatar({
   return (
     <span
       className="avatar avatar-initials"
-      style={{ width: size, height: size, fontSize: size * 0.4, background: `hsl(${hue} 45% 32%)` }}
+      style={{ width: size, height: size, fontSize: size * 0.4, background: `hsl(${15 + (hue % 50)} 58% 42%)` }}
     >
       {initials || '?'}
     </span>

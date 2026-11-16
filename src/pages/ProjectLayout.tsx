@@ -49,14 +49,14 @@ export default function ProjectLayout() {
 
   const base = `/projects/${projectId}`
   const items: Array<{ to: string; label: string; end?: boolean }> = [
-    { to: base, label: "Vue d'ensemble", end: true },
-    { to: `${base}/characters`, label: 'Personnages' },
-    { to: `${base}/relations`, label: 'Relations' },
-    { to: `${base}/dialogues`, label: 'Dialogues' },
-    { to: `${base}/novel`, label: 'Roman' },
-    { to: `${base}/plots`, label: 'Intrigues' },
+    { to: base, label: '🏠 Vue d\'ensemble', end: true },
+    { to: `${base}/characters`, label: '🎭 Personnages' },
+    { to: `${base}/relations`, label: '🔗 Relations' },
+    { to: `${base}/dialogues`, label: '💬 Dialogues' },
+    { to: `${base}/novel`, label: '📖 Roman' },
+    { to: `${base}/plots`, label: '🧵 Intrigues' },
     { to: `${base}/search`, label: '🔍 Recherche' },
-    { to: `${base}/settings`, label: 'Paramètres' },
+    { to: `${base}/settings`, label: '⚙️ Paramètres' },
   ]
 
   return (
