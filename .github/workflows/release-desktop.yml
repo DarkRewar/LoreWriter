@@ -54,8 +54,13 @@ jobs:
           node-version: 22
           cache: npm
       # Lit le toolchain épinglé dans rust-toolchain.toml à la racine du dépôt
+      - name: Version du toolchain épinglé (rust-toolchain.toml)
+        id: toolchain
+        run: echo "version=$(grep -oP 'channel = "\K[0-9.]+' rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+      # L'action exige l'input toolchain explicitement : on prend la version épinglée du dépôt
       - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ steps.toolchain.outputs.version }}
           targets: ${{ matrix.rustTargets }}
       - run: npm ci
       - name: Build de l'application standalone (Tauri)
