@@ -3,6 +3,9 @@ name = "lorewriter"
 version = "0.1.0"
 description = "LoreWriter — atelier de storytelling (app desktop Windows / macOS)"
 edition = "2021"
+# Certaines dépendances transitives (ex. block-buffer 0.12) utilisent l'édition 2024 :
+# il faut Rust >= 1.85. Le toolchain exact est épinglé dans rust-toolchain.toml (racine).
+rust-version = "1.85"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

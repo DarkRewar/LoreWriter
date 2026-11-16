@@ -53,7 +53,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      # Lit le toolchain épinglé dans rust-toolchain.toml à la racine du dépôt
+      - uses: dtolnay/rust-toolchain@master
         with:
           targets: ${{ matrix.rustTargets }}
       - run: npm ci

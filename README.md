@@ -79,9 +79,14 @@ L'application est packagée en natif avec **Tauri v2** (`src-tauri/`) : le build
 webview native ; les données restent 100 % locales (IndexedDB), la synchro cloud WebDAV restant optionnelle.
 
 ```bash
-npm run desktop:dev     # app desktop en mode dev (hot-reload Vite) — nécessite Rust installé
-npm run desktop:build   # installeur natif pour l'OS courant — nécessite Rust installé
+npm run desktop:dev     # app desktop en mode dev (hot-reload Vite)
+npm run desktop:build   # installeur natif pour l'OS courant
 ```
+
+**Prérequis : Rust installé via [rustup](https://rustup.rs)** (≥ 1.85, certaines dépendances transitives de Tauri
+utilisent l'édition 2024). Le fichier `rust-toolchain.toml` à la racine du dépôt épingle la version exacte : rustup
+la télécharge automatiquement à la première commande `cargo`, aucune action manuelle requise (`rustup update` si
+besoin). `src-tauri/Cargo.lock` est commité pour des builds reproductibles.
 
 En CI, à chaque **push sur `main`**, le workflow `.github/workflows/release-desktop.yml` build les installeurs
 **Windows x64** (NSIS `.exe` + MSI) et **macOS universel** (`.dmg`/`.app`, Intel + Apple Silicon) et publie une

@@ -1,0 +1,5 @@
+# Toolchain Rust épinglé pour le build desktop (Tauri) : rustup télécharge
+# automatiquement cette version exacte à la première commande cargo dans le dépôt.
+# Requis : >= 1.85 (certaines dépendances transitives utilisent l'édition 2024).
+[toolchain]
+channel = "1.99.1"
