@@ -15,16 +15,20 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   avec précision libre, visualisables en **liste** ou en **diagramme relationnel interactif** (cliquez sur un nœud
   pour ouvrir la fiche du personnage).
 - **Éditeur de dialogues** : scènes composées de répliques attribuées à chaque personnage (ou au narrateur), avec
-  aperçu mis en page.
+  aperçu mis en page, et **reliées à une intrigue** (optionnel) — retrouvables depuis la fiche de l'intrigue.
 - **Éditeur de roman** : chapitres avec éditeur de texte riche (gras, italique, titres, listes, citations…),
-  compteur de mots.
+  compteur de mots. Chaque chapitre peut être téléchargé individuellement en **Markdown** (`*.md`) et est
+  sauvegardé comme un **fichier dédié** dans les exports multi-fichiers et la synchro cloud.
 - **Intrigues** : titre, synopsis, statut, tags et personnages impliqués.
 - **Recherche globale** instantanée sur tout le projet (personnages, relations, répliques, chapitres, intrigues),
-  insensible à la casse et aux accents, avec extraits.
+  insensible à la casse et aux accents, avec extraits — **Ctrl+Espace** pour focus la barre de recherche.
 - **Cloud** : stockage local d'abord (IndexedDB, fonctionne hors ligne, PWA installable), puis **synchronisation
-  automatique** vers un serveur **WebDAV** (Nextcloud/ownCloud…) : un fichier JSON par projet, fusionné entité par
-  entité (la modification la plus récente gagne).
-- **Export / import** de projet en `.json`.
+  automatique** vers un serveur **WebDAV** (Nextcloud/ownCloud…) : la sauvegarde de chaque projet se fait sur
+  **plusieurs fichiers** — un fichier de base `project.json`, un fichier `chapters/<id>.md` (Markdown) par chapitre
+  et un fichier `dialogues/<id>.json` par scène de dialogue — fusionnés entité par entité (la modification la plus
+  récente gagne).
+- **Export / import** de projet en `.json` (fichier unique) **ou en dossier de plusieurs fichiers**
+  (`project.json` + `chapters/*.md` + `dialogues/*.json`, identique au format cloud).
 
 ## Démarrage en développement
 
@@ -86,9 +90,11 @@ PWA, utilisable hors ligne).
 3. Identifiant + **mot de passe d'application** (Nextcloud : Paramètres → Sécurité → Appareils et sessions).
 4. Dossier distant (ex. `LoreWriter`), puis activez la synchro et testez la connexion.
 
-Chaque projet est envoyé sous `<dossier>/lorewriter/<id-projet>.json`. Sur un autre appareil, configurez le même
-cloud : à l'ouverture d'un projet, la version distante est téléchargée, fusionnée avec la locale (modification la
-plus récente gagnante), puis renvoyée.
+Chaque projet est envoyé sous `<dossier>/lorewriter/<id-projet>/` en plusieurs fichiers : `project.json` (fichier
+de base), `chapters/<id>.md` (un Markdown par chapitre) et `dialogues/<id>.json` (un JSON par scène). Sur un autre
+appareil, configurez le même cloud : à l'ouverture d'un projet, la version distante est téléchargée, fusionnée avec
+la locale (modification la plus récente gagnante), puis renvoyée. Un ancien fichier unique `<id-projet>.json` est
+automatiquement migré vers ce format multi-fichiers.
 
 > 🔒 Les identifiants restent dans le stockage local du navigateur et ne sont transmis qu'à votre serveur WebDAV.
 
@@ -104,8 +110,10 @@ src/
     relationships.ts     # types de relations + libellés
     snapshot.ts          # format d'export, fusion (merge), recopie avec nouveaux ids
     export.ts            # snapshot complet d'un projet depuis la base
+    markdown.ts          # conversion HTML <-> Markdown + fichier .md par chapitre (frontmatter)
+    projectFiles.ts      # sauvegarde multi-fichiers : project.json + chapters/*.md + dialogues/*.json
     search.ts            # moteur de recherche global (pur, testé)
-    cloud.ts             # client WebDAV + logique de synchro
+    cloud.ts             # client WebDAV + synchro multi-fichiers
     queries.ts           # opérations haut niveau (créer/supprimer/dupliquer/importer…)
   components/            # TagInput, MetadataEditor, PortraitPicker, graphe Cytoscape, éditeur TipTap…
   pages/                 # une page par fonctionnalité

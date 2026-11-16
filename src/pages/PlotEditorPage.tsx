@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db'
 import { useProjectId } from '../hooks'
 import { newId } from '../lib/ids'
-import type { Plot, PlotStatus } from '../types'
+import type { DialogueScene, Plot, PlotStatus } from '../types'
 import { characterDisplayName } from '../types'
 import { TagInput } from '../components/TagInput'
 
@@ -30,6 +30,10 @@ export default function PlotEditorPage() {
         .toArray()
         .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), 'fr'))),
     [projectId],
+  )
+  const linkedScenes = useLiveQuery(
+    () => (plotId ? db.dialogueScenes.where('plotId').equals(plotId).toArray() : Promise.resolve<DialogueScene[]>([])),
+    [plotId],
   )
 
   const [draft, setDraft] = useState<Plot | null>(() => {
@@ -137,6 +141,32 @@ export default function PlotEditorPage() {
                   <span>{characterDisplayName(c)}</span>
                 </label>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="panel">
+          <h2>Scènes de dialogue liées ({linkedScenes?.length ?? 0})</h2>
+          {!linkedScenes || linkedScenes.length === 0 ? (
+            <p className="muted">
+              Aucune scène de dialogue reliée à cette intrigue — reliez-en une depuis l'éditeur de dialogue.
+            </p>
+          ) : (
+            <div className="character-list">
+              {linkedScenes
+                .slice()
+                .sort((a, b) => b.updatedAt - a.updatedAt)
+                .map((s) => (
+                  <div key={s.id} className="character-row">
+                    <span className="who">
+                      <Link className="name" to={`/projects/${projectId}/dialogues/${s.id}`}>
+                        💬 {s.title || 'Sans titre'}
+                      </Link>
+                      <br />
+                      <span className="sub">{s.lines.length} réplique(s)</span>
+                    </span>
+                  </div>
+                ))}
             </div>
           )}
         </div>

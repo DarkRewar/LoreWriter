@@ -19,6 +19,18 @@ export class LoreWriterDB extends Dexie {
       chapters: 'id, projectId, order, updatedAt',
       plots: 'id, projectId, title, status, updatedAt',
     })
+    this.version(2)
+      .stores({
+        dialogueScenes: 'id, projectId, title, plotId, updatedAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table('dialogueScenes')
+          .toCollection()
+          .modify((s) => {
+            if (!s.plotId) s.plotId = ''
+          }),
+      )
   }
 }
 

@@ -12,6 +12,10 @@ export default function DialoguesPage() {
     () => db.dialogueScenes.where('projectId').equals(projectId).toArray(),
     [projectId],
   )
+  const plots = useLiveQuery(
+    () => db.plots.where('projectId').equals(projectId).toArray(),
+    [projectId],
+  )
   const [title, setTitle] = useState('')
 
   const create = async (e: FormEvent) => {
@@ -24,6 +28,7 @@ export default function DialoguesPage() {
       projectId,
       title: title.trim(),
       description: '',
+      plotId: '',
       lines: [],
       createdAt: now,
       updatedAt: now,
@@ -37,6 +42,12 @@ export default function DialoguesPage() {
       await db.dialogueScenes.delete(id)
       await db.projects.update(projectId, { updatedAt: Date.now() })
     }
+  }
+
+  const plotTitle = (plotId: string): string | null => {
+    if (!plotId) return null
+    const p = plots?.find((x) => x.id === plotId)
+    return p ? p.title || 'Sans titre' : null
   }
 
   return (
@@ -76,7 +87,9 @@ export default function DialoguesPage() {
                   </Link>
                   <br />
                   <span className="sub">
-                    {s.lines.length} réplique(s) · modifiée le {new Date(s.updatedAt).toLocaleString('fr-FR')}
+                    {s.lines.length} réplique(s)
+                    {plotTitle(s.plotId) ? ` · 🧩 ${plotTitle(s.plotId)}` : ''} · modifiée le{' '}
+                    {new Date(s.updatedAt).toLocaleString('fr-FR')}
                   </span>
                 </span>
                 <button type="button" className="btn-icon" aria-label="Supprimer la scène" onClick={() => void remove(s.id, s.title)}>

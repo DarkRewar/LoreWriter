@@ -5,6 +5,9 @@ import { useProjectId } from '../hooks'
 import { newId } from '../lib/ids'
 import { RichTextEditor } from '../components/RichTextEditor'
 import { wordCount } from '../lib/text'
+import { serializeChapterFile } from '../lib/markdown'
+import { downloadFile } from '../lib/queries'
+import type { Chapter } from '../types'
 
 export default function NovelPage() {
   const projectId = useProjectId()
@@ -73,6 +76,11 @@ export default function NovelPage() {
     setSelectedId(null)
   }
 
+  const downloadChapter = (c: Chapter) => {
+    const base = (c.title || 'chapitre').replace(/[^\w-]+/g, '_')
+    downloadFile(`${base}.md`, serializeChapterFile(c), 'text/markdown;charset=utf-8')
+  }
+
   return (
     <div className="page">
       <div className="toolbar">
@@ -108,6 +116,17 @@ export default function NovelPage() {
                       {i + 1}. {c.title || 'Sans titre'}
                     </span>
                     <span className="words">{wordCount(c.content)} mots</span>
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      title="Télécharger ce chapitre (.md)"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        downloadChapter(c)
+                      }}
+                    >
+                      ⬇️
+                    </button>
                     <button
                       type="button"
                       className="btn-icon"

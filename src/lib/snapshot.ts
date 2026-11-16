@@ -107,6 +107,7 @@ export function remapSnapshotIds(s: ProjectSnapshot, newProjectId: string, now =
       ...sc,
       id: remap(sc.id),
       projectId: newProjectId,
+      plotId: remap(sc.plotId ?? ''),
       lines: sc.lines.map((l) => ({ ...l, id: remap(l.id), characterId: remap(l.characterId) })),
       createdAt: now,
       updatedAt: now,

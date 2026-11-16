@@ -56,8 +56,8 @@ export default function CloudSettingsPage() {
       <h1>☁️ Synchronisation cloud</h1>
       <p className="muted">
         LoreWriter fonctionne d'abord <strong>hors ligne</strong> : toutes vos données vivent dans ce navigateur
-        (IndexedDB). La synchro cloud envoie ensuite chaque projet (fichier JSON) vers <strong>votre propre
-        cloud</strong> via WebDAV — par exemple une instance Nextcloud/ownCloud.
+        (IndexedDB). La synchro cloud envoie ensuite chaque projet en <strong>plusieurs fichiers</strong> vers{' '}
+        <strong>votre propre cloud</strong> via WebDAV — par exemple une instance Nextcloud/ownCloud.
       </p>
 
       <div className="note">
@@ -117,11 +117,14 @@ export default function CloudSettingsPage() {
       <div className="panel" style={{ maxWidth: 640, marginTop: 20 }}>
         <h2>Comment ça marche ?</h2>
         <p className="muted">
-          Chaque projet est exporté en un fichier <code>&lt;id-projet&gt;.json</code> dans{' '}
-          <code>{'/<dossier>/lorewriter/'}</code> de votre cloud. À l'ouverture d'un projet, LoreWriter télécharge la
-          version distante, fusionne entité par entité (la modification la plus récente gagne), puis renvoie le
-          résultat. Ouvrez LoreWriter sur un autre appareil configuré avec le même cloud : vos projets se retrouvent
-          automatiquement.
+          Chaque projet est enregistré dans <code>{'/<dossier>/lorewriter/<id-projet>/'}</code> de votre cloud, en
+          plusieurs fichiers : <code>project.json</code> (fichier de base : projet, personnages, relations, intrigues),{' '}
+          <code>chapters/&lt;id&gt;.md</code> (un fichier Markdown dédié par chapitre) et{' '}
+          <code>dialogues/&lt;id&gt;.json</code> (un fichier par scène de dialogue). À l'ouverture d'un projet,
+          LoreWriter télécharge la version distante, fusionne entité par entité (la modification la plus récente
+          gagne), puis renvoie le résultat. Ouvrez LoreWriter sur un autre appareil configuré avec le même cloud :
+          vos projets se retrouvent automatiquement. Un ancien fichier unique <code>&lt;id-projet&gt;.json</code>{' '}
+          est automatiquement migré vers ce format multi-fichiers.
         </p>
         <p className="muted">
           Astuce : pour héberger LoreWriter « de n'importe où », servez le dossier <code>dist/</code> (voir README)

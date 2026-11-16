@@ -65,6 +65,12 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
     return c ? characterDisplayName(c) : 'Personnage supprimé'
   }
 
+  const plotTitle = (id: string): string => {
+    if (!id) return ''
+    const p = input.plots.find((x) => x.id === id)
+    return p ? p.title : ''
+  }
+
   for (const c of input.characters) {
     const name = characterDisplayName(c)
     const fields: Field[] = [
@@ -116,9 +122,11 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
   }
 
   for (const s of input.dialogueScenes) {
+    const linkedPlot = plotTitle(s.plotId ?? '')
     const sceneScore = scoreFields(
       [
         { text: s.title, weight: 8 },
+        { text: linkedPlot, weight: 5 },
         { text: s.description, weight: 3 },
       ],
       q,
@@ -149,7 +157,7 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
         kind: 'dialogue',
         id: s.id,
         title: s.title || 'Dialogue sans titre',
-        subtitle: `${s.lines.length} réplique(s)`,
+        subtitle: `${s.lines.length} réplique(s)${linkedPlot ? ` · 🧩 ${linkedPlot}` : ''}`,
         snippet,
         score,
         path: `dialogues/${s.id}`,

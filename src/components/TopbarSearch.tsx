@@ -11,6 +11,7 @@ export default function TopbarSearch() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [open, setOpen] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setQuery('')
@@ -43,6 +44,18 @@ export default function TopbarSearch() {
     return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.ctrlKey && e.code === 'Space' && projectId) {
+        e.preventDefault()
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [projectId])
+
   if (!projectId) return null
 
   const goToAll = () => {
@@ -64,13 +77,15 @@ export default function TopbarSearch() {
     <div className="topbar-search" ref={boxRef}>
       <form onSubmit={submit}>
         <input
+          ref={inputRef}
           type="text"
-          placeholder="🔍 Rechercher dans ce projet…"
+          placeholder="🔍 Rechercher dans ce projet… (Ctrl+Espace)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={() => results.length > 0 && setOpen(true)}
           aria-label="Recherche dans le projet"
+          title="Recherche dans le projet — Ctrl+Espace pour y accéder"
         />
       </form>
       {open && query.trim() !== '' && (
