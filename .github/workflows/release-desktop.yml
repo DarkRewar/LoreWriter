@@ -41,12 +41,14 @@ jobs:
             os: windows-latest
             rustTargets: x86_64-pc-windows-msvc
             tauriTarget: x86_64-pc-windows-msvc
-            bundleGlob: 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*'
+            bundles: nsis,msi
+            bundleGlob: 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.exe\nsrc-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.msi'
           - name: macos-universal
             os: macos-latest
             rustTargets: x86_64-apple-darwin,aarch64-apple-darwin
             tauriTarget: universal-apple-darwin
-            bundleGlob: 'src-tauri/target/universal-apple-darwin/release/bundle/**/*'
+            bundles: dmg
+            bundleGlob: 'src-tauri/target/universal-apple-darwin/release/bundle/**/*.dmg'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,7 +67,7 @@ jobs:
           targets: ${{ matrix.rustTargets }}
       - run: npm ci
       - name: Build de l'application standalone (Tauri)
-        run: npx tauri build --target ${{ matrix.tauriTarget }}
+        run: npx tauri build --target ${{ matrix.tauriTarget }} --bundles ${{ matrix.bundles }}
       - uses: actions/upload-artifact@v4
         with:
           name: lorewriter-${{ matrix.name }}
