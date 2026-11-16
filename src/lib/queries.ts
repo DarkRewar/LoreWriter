@@ -3,7 +3,7 @@ import { buildSnapshot, applySnapshot, parseSnapshot, serializeSnapshot, type Pr
 import { remapSnapshotIds } from './snapshot'
 import { newId } from './ids'
 import { searchEntities, type SearchResult } from './search'
-import { buildProjectFiles, projectFilesToSnapshot } from './projectFiles'
+import { loreBytesToSnapshot, snapshotToLoreBytes } from './lore'
 
 export async function createProject(name: string, description: string): Promise<string> {
   const now = Date.now()
@@ -45,11 +45,6 @@ export async function exportProjectJson(projectId: string): Promise<string> {
   return serializeSnapshot(await buildSnapshot(projectId))
 }
 
-/** Projet découpé en plusieurs fichiers : project.json + chapters/*.md + dialogues/*.json. */
-export async function exportProjectFiles(projectId: string): Promise<Map<string, string>> {
-  return buildProjectFiles(projectId)
-}
-
 async function importSnapshot(snap: ProjectSnapshot): Promise<string> {
   const exists = await db.projects.get(snap.project.id)
   const finalSnap = exists ? remapSnapshotIds(snap, newId()) : snap
@@ -62,9 +57,14 @@ export async function importProjectJson(json: string): Promise<string> {
   return importSnapshot(parseSnapshot(json))
 }
 
-/** Importe un projet depuis un dossier de fichiers exporté (project.json + sous-dossiers). */
-export async function importProjectFiles(files: Map<string, string> | Record<string, string>): Promise<string> {
-  return importSnapshot(projectFilesToSnapshot(files))
+/** Export en UN SEUL fichier .lore : archive ZIP contenant project.json + chapters/*.md + dialogues/*.json. */
+export async function exportProjectLore(projectId: string): Promise<Uint8Array> {
+  return snapshotToLoreBytes(await buildSnapshot(projectId))
+}
+
+/** Importe un fichier .lore (archive ZIP multi-fichiers). */
+export async function importProjectLore(bytes: Uint8Array): Promise<string> {
+  return importSnapshot(await loreBytesToSnapshot(bytes))
 }
 
 export async function searchProject(projectId: string, query: string): Promise<SearchResult[]> {
@@ -78,8 +78,8 @@ export async function searchProject(projectId: string, query: string): Promise<S
   return searchEntities({ projectId, characters, relationships, dialogueScenes, chapters, plots }, query)
 }
 
-export function downloadFile(filename: string, content: string, type = 'application/octet-stream'): void {
-  const blob = new Blob([content], { type })
+export function downloadFile(filename: string, content: string | Uint8Array, type = 'application/octet-stream'): void {
+  const blob = new Blob([content as BlobPart], { type })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

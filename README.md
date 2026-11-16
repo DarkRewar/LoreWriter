@@ -27,8 +27,9 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   **plusieurs fichiers** — un fichier de base `project.json`, un fichier `chapters/<id>.md` (Markdown) par chapitre
   et un fichier `dialogues/<id>.json` par scène de dialogue — fusionnés entité par entité (la modification la plus
   récente gagne).
-- **Export / import** de projet en `.json` (fichier unique) **ou en dossier de plusieurs fichiers**
-  (`project.json` + `chapters/*.md` + `dialogues/*.json`, identique au format cloud).
+- **Export / import** de projet en **un seul fichier `.lore`** : une archive ZIP (ouvrable avec n'importe quel outil)
+  qui contient la sauvegarde découpée en plusieurs fichiers — `project.json` (base), `chapters/<id>.md` et
+  `dialogues/<id>.json`, identique au format cloud. Un export `.json` plat reste disponible.
 
 ## Démarrage en développement
 
@@ -112,6 +113,8 @@ src/
     export.ts            # snapshot complet d'un projet depuis la base
     markdown.ts          # conversion HTML <-> Markdown + fichier .md par chapitre (frontmatter)
     projectFiles.ts      # sauvegarde multi-fichiers : project.json + chapters/*.md + dialogues/*.json
+    archive.ts           # mini ZIP (writer/reader, CompressionStream natif, CRC32) — aucune dépendance
+    lore.ts              # fichier .lore = ZIP de la sauvegarde multi-fichiers (export/import en un seul fichier)
     search.ts            # moteur de recherche global (pur, testé)
     cloud.ts             # client WebDAV + synchro multi-fichiers
     queries.ts           # opérations haut niveau (créer/supprimer/dupliquer/importer…)

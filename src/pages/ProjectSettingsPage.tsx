@@ -3,19 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../db'
 import { useProject, useProjectId } from '../hooks'
-import { deleteProject, downloadJson, exportProjectFiles, exportProjectJson, importProjectFiles, importProjectJson } from '../lib/queries'
-
-type ShowDirectoryPicker = (options?: { id?: string; mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>
-
-const getDirectoryPicker = (): ShowDirectoryPicker | null =>
-  (window as unknown as { showDirectoryPicker?: ShowDirectoryPicker }).showDirectoryPicker ?? null
-
-interface DirectoryReader {
-  values(): AsyncIterableIterator<FileSystemHandle>
-}
-
-const readDirEntries = (handle: FileSystemDirectoryHandle): AsyncIterableIterator<FileSystemHandle> =>
-  (handle as unknown as DirectoryReader).values()
+import { deleteProject, downloadFile, downloadJson, exportProjectLore, exportProjectJson, importProjectJson, importProjectLore } from '../lib/queries'
+import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 
 export default function ProjectSettingsPage() {
   const projectId = useProjectId()
@@ -52,61 +41,19 @@ export default function ProjectSettingsPage() {
     downloadJson(`${project.name.replace(/[^\w-]+/g, '_')}.lorewriter.json`, json)
   }
 
-  const onExportFiles = async () => {
-    const picker = getDirectoryPicker()
-    if (!picker) {
-      setMessage("L'export en dossier n'est pas supporté par ce navigateur — utilisez l'export .json.")
-      return
-    }
-    try {
-      const dir = await picker({ id: 'lorewriter-export', mode: 'readwrite' })
-      const files = await exportProjectFiles(projectId)
-      for (const [path, content] of files) {
-        const parts = path.split('/')
-        let handle = dir
-        for (const part of parts.slice(0, -1)) handle = await handle.getDirectoryHandle(part, { create: true })
-        const file = await handle.getFileHandle(parts[parts.length - 1], { create: true })
-        const w = await file.createWritable()
-        await w.write(content)
-        await w.close()
-      }
-      setMessage('Projet exporté en plusieurs fichiers : project.json + chapters/*.md + dialogues/*.json.')
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      setMessage(err instanceof Error ? err.message : "Export impossible.")
-    }
-  }
-
-  const onImportFiles = async () => {
-    const picker = getDirectoryPicker()
-    if (!picker) {
-      setMessage("L'import d'un dossier n'est pas supporté par ce navigateur — importez le fichier .json.")
-      return
-    }
-    try {
-      const dir = await picker({ id: 'lorewriter-import', mode: 'read' })
-      const files = new Map<string, string>()
-      const walk = async (handle: FileSystemDirectoryHandle, prefix: string): Promise<void> => {
-        for await (const entry of readDirEntries(handle)) {
-          if (entry.kind === 'directory') await walk(entry as FileSystemDirectoryHandle, `${prefix}${entry.name}/`)
-          else files.set(`${prefix}${entry.name}`, await (await (entry as FileSystemFileHandle).getFile()).text())
-        }
-      }
-      await walk(dir, '')
-      const id = await importProjectFiles(files)
-      setMessage('Projet importé depuis le dossier de fichiers.')
-      navigate(`/projects/${id}`)
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      setMessage(err instanceof Error ? err.message : "Import impossible.")
-    }
+  const onExportLore = async () => {
+    const bytes = await exportProjectLore(projectId)
+    downloadFile(`${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`, bytes, LORE_MIME)
   }
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const id = await importProjectJson(await file.text())
+      const buf = new Uint8Array(await file.arrayBuffer())
+      const id = looksLikeLoreFile(file.name, buf)
+        ? await importProjectLore(buf)
+        : await importProjectJson(new TextDecoder().decode(buf))
       setMessage('Projet importé avec succès.')
       navigate(`/projects/${id}`)
     } catch (err) {
@@ -161,25 +108,24 @@ export default function ProjectSettingsPage() {
       <div className="panel">
         <h2>Exporter / importer</h2>
         <p className="muted">
-          Deux formats au choix : un fichier JSON complet, ou un dossier de plusieurs fichiers —{' '}
-          <code>project.json</code> (projet, personnages, relations, intrigues), un fichier{' '}
-          <code>.md</code> dédié par chapitre et un fichier <code>.json</code> par scène de dialogue. C'est le même
-          découpage que la synchronisation cloud.
+          L'export se fait en <strong>un seul fichier <code>.lore</code></strong> : une archive ZIP qui contient la
+          sauvegarde du projet découpée en plusieurs fichiers — <code>project.json</code> (fichier de base : projet,
+          personnages, relations, intrigues), un fichier <code>.md</code> dédié par chapitre et un fichier{' '}
+          <code>.json</code> par scène de dialogue. C'est le même découpage que la synchronisation cloud, empaqueté
+          dans un seul fichier ouvrable avec n'importe quel outil ZIP. Un export <code>.json</code> plat reste
+          disponible.
         </p>
         <div className="btn-row">
+          <button type="button" className="btn btn-primary" onClick={onExportLore}>
+            📦 Exporter le projet (.lore)
+          </button>
           <button type="button" className="btn" onClick={onExport}>
             ⬇️ Exporter le projet (.json)
           </button>
-          <button type="button" className="btn" onClick={onExportFiles}>
-            🗂️ Exporter en dossier (plusieurs fichiers)
-          </button>
           <label className="btn">
-            ⬆️ Importer un projet (.json)
-            <input type="file" accept="application/json,.json" hidden onChange={onImport} />
+            ⬆️ Importer un projet (.lore ou .json)
+            <input type="file" accept=".lore,.json,application/json,application/zip" hidden onChange={onImport} />
           </label>
-          <button type="button" className="btn" onClick={onImportFiles}>
-            📂 Importer un dossier exporté
-          </button>
         </div>
       </div>
 
