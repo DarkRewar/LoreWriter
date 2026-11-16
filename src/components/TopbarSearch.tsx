@@ -75,10 +75,12 @@ export default function TopbarSearch() {
 
   return (
     <div className="topbar-search" ref={boxRef}>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} autoComplete="off">
         <input
           ref={inputRef}
           type="text"
+          autoComplete="off"
+          spellCheck={false}
           placeholder="🔍 Rechercher dans ce projet… (Ctrl+Espace)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
