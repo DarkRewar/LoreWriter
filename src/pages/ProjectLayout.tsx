@@ -52,9 +52,9 @@ export default function ProjectLayout() {
     { to: base, label: '🏠 Vue d\'ensemble', end: true },
     { to: `${base}/characters`, label: '🎭 Personnages' },
     { to: `${base}/relations`, label: '🔗 Relations' },
+    { to: `${base}/plots`, label: '🧵 Intrigues' },
     { to: `${base}/dialogues`, label: '💬 Dialogues' },
     { to: `${base}/novel`, label: '📖 Romans' },
-    { to: `${base}/plots`, label: '🧵 Intrigues' },
     { to: `${base}/search`, label: '🔍 Recherche' },
     { to: `${base}/settings`, label: '⚙️ Paramètres' },
   ]

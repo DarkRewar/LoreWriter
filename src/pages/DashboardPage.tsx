@@ -39,6 +39,10 @@ export default function DashboardPage() {
           <h3>🕸️ Relations</h3>
           <div className="counts">{stats?.relationships ?? '…'}</div>
         </Link>
+        <Link className="project-card" to={`${base}/plots`}>
+          <h3>🧩 Intrigues</h3>
+          <div className="counts">{stats?.plots ?? '…'}</div>
+        </Link>
         <Link className="project-card" to={`${base}/dialogues`}>
           <h3>💬 Dialogues</h3>
           <div className="counts">{stats?.dialogueScenes ?? '…'} scène(s)</div>
@@ -46,10 +50,6 @@ export default function DashboardPage() {
         <Link className="project-card" to={`${base}/novel`}>
           <h3>📖 Romans</h3>
           <div className="counts">{stats?.novels ?? '…'} roman(s) · {stats?.chapters ?? '…'} chapitre(s)</div>
-        </Link>
-        <Link className="project-card" to={`${base}/plots`}>
-          <h3>🧩 Intrigues</h3>
-          <div className="counts">{stats?.plots ?? '…'}</div>
         </Link>
         <Link className="project-card" to={`${base}/search`}>
           <h3>🔍 Recherche</h3>
