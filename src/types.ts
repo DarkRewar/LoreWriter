@@ -72,6 +72,8 @@ export interface DialogueScene {
   projectId: string
   title: string
   description: string
+  /** Intrigue à laquelle la scène est reliée, ou chaîne vide pour aucune. */
+  plotId: string
   lines: DialogueLine[]
   createdAt: number
   updatedAt: number

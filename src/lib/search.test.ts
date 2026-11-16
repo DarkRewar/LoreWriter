@@ -69,6 +69,7 @@ describe('searchEntities', () => {
             projectId: 'p1',
             title: 'Cave',
             description: '',
+            plotId: '',
             lines: [{ id: 'l1', characterId: 'c1', text: "Je ne sortirai jamais d'ici." }],
             createdAt: 1,
             updatedAt: 1,
@@ -81,6 +82,31 @@ describe('searchEntities', () => {
     expect(res[0].kind).toBe('dialogue')
     expect(res[0].snippet).toContain('Léa')
     expect(res[0].path).toBe('dialogues/s1')
+  })
+
+  it('retrouve une scène de dialogue via le titre de son intrigue liée', () => {
+    const res = searchEntities(
+      input({
+        dialogueScenes: [
+          {
+            id: 's1',
+            projectId: 'p1',
+            title: 'Cave',
+            description: '',
+            plotId: 'pl1',
+            lines: [],
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        plots: [{ id: 'pl1', projectId: 'p1', title: 'La disparition du sceptre', synopsis: '', status: 'wip', tags: [], characterIds: [], createdAt: 1, updatedAt: 1 }],
+      }),
+      'sceptre',
+    )
+    const dlg = res.find((r) => r.kind === 'dialogue')
+    expect(dlg).toBeDefined()
+    expect(dlg?.path).toBe('dialogues/s1')
+    expect(dlg?.subtitle).toContain('La disparition du sceptre')
   })
 
   it('retrouve du texte dans un chapitre (HTML nettoyé)', () => {

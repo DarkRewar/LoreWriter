@@ -1,8 +1,9 @@
 import { db } from '../db'
-import { buildSnapshot, applySnapshot, parseSnapshot, serializeSnapshot } from './export'
+import { buildSnapshot, applySnapshot, parseSnapshot, serializeSnapshot, type ProjectSnapshot } from './export'
 import { remapSnapshotIds } from './snapshot'
 import { newId } from './ids'
 import { searchEntities, type SearchResult } from './search'
+import { loreBytesToSnapshot, snapshotToLoreBytes } from './lore'
 
 export async function createProject(name: string, description: string): Promise<string> {
   const now = Date.now()
@@ -44,13 +45,26 @@ export async function exportProjectJson(projectId: string): Promise<string> {
   return serializeSnapshot(await buildSnapshot(projectId))
 }
 
-export async function importProjectJson(json: string): Promise<string> {
-  const snap = parseSnapshot(json)
+async function importSnapshot(snap: ProjectSnapshot): Promise<string> {
   const exists = await db.projects.get(snap.project.id)
   const finalSnap = exists ? remapSnapshotIds(snap, newId()) : snap
   if (exists) finalSnap.project.name = `${snap.project.name} (import)`
   await applySnapshot(finalSnap, 'replace')
   return finalSnap.project.id
+}
+
+export async function importProjectJson(json: string): Promise<string> {
+  return importSnapshot(parseSnapshot(json))
+}
+
+/** Export en UN SEUL fichier .lore : archive ZIP contenant project.json + chapters/*.md + dialogues/*.json. */
+export async function exportProjectLore(projectId: string): Promise<Uint8Array> {
+  return snapshotToLoreBytes(await buildSnapshot(projectId))
+}
+
+/** Importe un fichier .lore (archive ZIP multi-fichiers). */
+export async function importProjectLore(bytes: Uint8Array): Promise<string> {
+  return importSnapshot(await loreBytesToSnapshot(bytes))
 }
 
 export async function searchProject(projectId: string, query: string): Promise<SearchResult[]> {
@@ -64,12 +78,16 @@ export async function searchProject(projectId: string, query: string): Promise<S
   return searchEntities({ projectId, characters, relationships, dialogueScenes, chapters, plots }, query)
 }
 
-export function downloadJson(filename: string, content: string): void {
-  const blob = new Blob([content], { type: 'application/json' })
+export function downloadFile(filename: string, content: string | Uint8Array, type = 'application/octet-stream'): void {
+  const blob = new Blob([content as BlobPart], { type })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+export function downloadJson(filename: string, content: string): void {
+  downloadFile(filename, content, 'application/json')
 }

@@ -22,6 +22,15 @@ export default function DialogueEditorPage() {
         .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), 'fr'))),
     [projectId],
   )
+  const plots = useLiveQuery(
+    () =>
+      db.plots
+        .where('projectId')
+        .equals(projectId)
+        .toArray()
+        .then((list) => list.sort((a, b) => a.title.localeCompare(b.title, 'fr'))),
+    [projectId],
+  )
 
   const [draft, setDraft] = useState<DialogueScene | null>(null)
   useEffect(() => {
@@ -107,6 +116,17 @@ export default function DialogueEditorPage() {
             onChange={(e) => update({ description: e.target.value })}
             placeholder="Où se passe la scène, dans quelles circonstances…"
           />
+        </label>
+        <label className="field">
+          <span>Intrigue liée (optionnel)</span>
+          <select value={draft.plotId ?? ''} onChange={(e) => update({ plotId: e.target.value })}>
+            <option value="">— Aucune intrigue —</option>
+            {(plots ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title || 'Sans titre'}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

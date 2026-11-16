@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../db'
 import { useProject, useProjectId } from '../hooks'
-import { deleteProject, downloadJson, exportProjectJson, importProjectJson } from '../lib/queries'
+import { deleteProject, downloadFile, downloadJson, exportProjectLore, exportProjectJson, importProjectJson, importProjectLore } from '../lib/queries'
+import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 
 export default function ProjectSettingsPage() {
   const projectId = useProjectId()
@@ -40,11 +41,19 @@ export default function ProjectSettingsPage() {
     downloadJson(`${project.name.replace(/[^\w-]+/g, '_')}.lorewriter.json`, json)
   }
 
+  const onExportLore = async () => {
+    const bytes = await exportProjectLore(projectId)
+    downloadFile(`${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`, bytes, LORE_MIME)
+  }
+
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const id = await importProjectJson(await file.text())
+      const buf = new Uint8Array(await file.arrayBuffer())
+      const id = looksLikeLoreFile(file.name, buf)
+        ? await importProjectLore(buf)
+        : await importProjectJson(new TextDecoder().decode(buf))
       setMessage('Projet importé avec succès.')
       navigate(`/projects/${id}`)
     } catch (err) {
@@ -99,16 +108,23 @@ export default function ProjectSettingsPage() {
       <div className="panel">
         <h2>Exporter / importer</h2>
         <p className="muted">
-          Le projet complet (personnages, relations, dialogues, chapitres, intrigues) est exporté dans un fichier JSON
-          que vous pouvez archiver ou transférer.
+          L'export se fait en <strong>un seul fichier <code>.lore</code></strong> : une archive ZIP qui contient la
+          sauvegarde du projet découpée en plusieurs fichiers — <code>project.json</code> (fichier de base : projet,
+          personnages, relations, intrigues), un fichier <code>.md</code> dédié par chapitre et un fichier{' '}
+          <code>.json</code> par scène de dialogue. C'est le même découpage que la synchronisation cloud, empaqueté
+          dans un seul fichier ouvrable avec n'importe quel outil ZIP. Un export <code>.json</code> plat reste
+          disponible.
         </p>
         <div className="btn-row">
+          <button type="button" className="btn btn-primary" onClick={onExportLore}>
+            📦 Exporter le projet (.lore)
+          </button>
           <button type="button" className="btn" onClick={onExport}>
             ⬇️ Exporter le projet (.json)
           </button>
           <label className="btn">
-            ⬆️ Importer un projet (.json)
-            <input type="file" accept="application/json,.json" hidden onChange={onImport} />
+            ⬆️ Importer un projet (.lore ou .json)
+            <input type="file" accept=".lore,.json,application/json,application/zip" hidden onChange={onImport} />
           </label>
         </div>
       </div>
@@ -118,7 +134,8 @@ export default function ProjectSettingsPage() {
         <p className="muted">
           La synchro automatique se configure globalement dans la page{' '}
           <Link to="/cloud">☁️ Cloud</Link> (serveur WebDAV compatible Nextcloud/ownCloud). Chaque projet est alors
-          envoyé automatiquement vers votre cloud et fusionné au démarrage.
+          envoyé automatiquement vers votre cloud en plusieurs fichiers (<code>project.json</code>,{' '}
+          <code>chapters/*.md</code>, <code>dialogues/*.json</code>) et fusionné au démarrage.
         </p>
       </div>
 

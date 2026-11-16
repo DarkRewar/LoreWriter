@@ -44,6 +44,8 @@ export default function SearchPage() {
         className="search-input"
         type="text"
         autoFocus
+        autoComplete="off"
+        spellCheck={false}
         placeholder="Rechercher un personnage, une réplique, un chapitre, une intrigue…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}

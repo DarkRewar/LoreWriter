@@ -80,6 +80,7 @@ describe('remapSnapshotIds', () => {
           projectId: 'p1',
           title: 'Scène 1',
           description: '',
+          plotId: 'pl1',
           lines: [
             { id: 'l1', characterId: 'c1', text: 'Salut' },
             { id: 'l2', characterId: '', text: 'Il entra.' },
@@ -95,10 +96,12 @@ describe('remapSnapshotIds', () => {
     expect(copy.characters.every((c) => c.projectId === 'p2' && c.id !== 'c1')).toBe(true)
     const c1new = copy.characters.find((c) => c.firstName === 'Ana')!
     const c2new = copy.characters.find((c) => c.firstName === 'Bob')!
+    const pl1new = copy.plots[0].id
     expect(copy.relationships[0].sourceId).toBe(c1new.id)
     expect(copy.relationships[0].targetId).toBe(c2new.id)
     expect(copy.dialogueScenes[0].lines[0].characterId).toBe(c1new.id)
     expect(copy.dialogueScenes[0].lines[1].characterId).toBe('') // narrateur inchangé
+    expect(copy.dialogueScenes[0].plotId).toBe(pl1new)
     expect(copy.plots[0].characterIds).toEqual([c2new.id])
   })
 })

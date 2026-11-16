@@ -1,5 +1,13 @@
 import { applySnapshot, buildSnapshot, parseSnapshot, serializeSnapshot, type ProjectSnapshot } from './export'
 import { mergeSnapshots } from './snapshot'
+import {
+  BASE_FILE_NAME,
+  CHAPTERS_DIR,
+  DIALOGUES_DIR,
+  projectFilesToSnapshot,
+  snapshotToProjectFiles,
+  type ProjectFiles,
+} from './projectFiles'
 
 export interface CloudConfig {
   provider: 'webdav'
@@ -43,12 +51,42 @@ const authHeader = (c: CloudConfig): Record<string, string> => ({
   Authorization: `Basic ${b64encodeUnicode(`${c.username}:${c.password}`)}`,
 })
 
-/** Construit l'URL du fichier de snapshot d'un projet. */
-export function cloudFilePath(config: CloudConfig, projectId: string): string {
+function cloudUrl(config: CloudConfig, ...segments: string[]): string {
   const base = config.baseUrl.replace(/\/+$/, '')
   const folder = config.folder.replace(/^\/+|\/+$/g, '')
-  const segments = [...(folder ? folder.split('/') : []), 'lorewriter', `${projectId}.json`]
-  return `${base}/${segments.map(encodeURIComponent).join('/')}`
+  const parts = [...(folder ? folder.split('/') : []), 'lorewriter', ...segments]
+  return `${base}/${parts.map(encodeURIComponent).join('/')}`
+}
+
+/** Ancien emplacement (v1) : un seul fichier JSON par projet — encore lu pour migrer. */
+export function cloudFilePath(config: CloudConfig, projectId: string): string {
+  return cloudUrl(config, `${projectId}.json`)
+}
+
+/** Dossier d'un projet en multi-fichiers : `<base>/<dossier>/lorewriter/<id-projet>/`. */
+export function cloudProjectDirUrl(config: CloudConfig, projectId: string): string {
+  return `${cloudUrl(config, projectId)}/`
+}
+
+/** Fichier de base du projet (projet, personnages, relations, intrigues). */
+export function cloudBaseFileUrl(config: CloudConfig, projectId: string): string {
+  return cloudUrl(config, projectId, BASE_FILE_NAME)
+}
+
+export function cloudChaptersDirUrl(config: CloudConfig, projectId: string): string {
+  return `${cloudUrl(config, projectId, CHAPTERS_DIR)}/`
+}
+
+export function cloudDialoguesDirUrl(config: CloudConfig, projectId: string): string {
+  return `${cloudUrl(config, projectId, DIALOGUES_DIR)}/`
+}
+
+export function cloudChapterFileUrl(config: CloudConfig, projectId: string, chapterId: string): string {
+  return cloudUrl(config, projectId, CHAPTERS_DIR, `${chapterId}.md`)
+}
+
+export function cloudDialogueFileUrl(config: CloudConfig, projectId: string, sceneId: string): string {
+  return cloudUrl(config, projectId, DIALOGUES_DIR, `${sceneId}.json`)
 }
 
 async function ensureCollections(config: CloudConfig, fileUrl: string): Promise<void> {
@@ -66,23 +104,74 @@ async function ensureCollections(config: CloudConfig, fileUrl: string): Promise<
   }
 }
 
-export async function pushSnapshotToCloud(config: CloudConfig, projectId: string, snapshotJson: string): Promise<void> {
-  const url = cloudFilePath(config, projectId)
-  await ensureCollections(config, url)
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { ...authHeader(config), 'Content-Type': 'application/json; charset=utf-8' },
-    body: snapshotJson,
-  })
-  if (!res.ok) throw new Error(`Échec de l'envoi vers le cloud (HTTP ${res.status})`)
-}
-
-export async function pullSnapshotFromCloud(config: CloudConfig, projectId: string): Promise<string | null> {
-  const url = cloudFilePath(config, projectId)
+async function fetchText(config: CloudConfig, url: string): Promise<string | null> {
   const res = await fetch(url, { method: 'GET', headers: authHeader(config) })
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Échec du téléchargement depuis le cloud (HTTP ${res.status})`)
   return await res.text()
+}
+
+async function putText(config: CloudConfig, url: string, content: string, contentType: string): Promise<void> {
+  await ensureCollections(config, url)
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { ...authHeader(config), 'Content-Type': contentType },
+    body: content,
+  })
+  if (!res.ok) throw new Error(`Échec de l'envoi vers le cloud (HTTP ${res.status})`)
+}
+
+async function deleteRemote(config: CloudConfig, url: string): Promise<void> {
+  const res = await fetch(url, { method: 'DELETE', headers: authHeader(config) })
+  if (!res.ok && res.status !== 404) throw new Error(`Échec de la suppression distante (HTTP ${res.status})`)
+}
+
+/**
+ * Extrait les noms des fichiers enfants d'une collection WebDAV depuis une
+ * réponse PROPFIND (multistatus), relativement à l'URL du dossier listé.
+ */
+export function parsePropfindHrefs(xml: string, dirUrl: string): string[] {
+  const hrefs = [...xml.matchAll(/<(?:[a-zA-Z][\w.-]*:)?href[^>]*>([^<]+)<\/(?:[a-zA-Z][\w.-]*:)?href>/gi)].map((m) => m[1])
+  let dirPath: string
+  try {
+    dirPath = new URL(dirUrl).pathname.replace(/\/+$/, '') + '/'
+  } catch {
+    return []
+  }
+  const out: string[] = []
+  for (const raw of hrefs) {
+    let path = raw
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        path = new URL(raw).pathname
+      } catch {
+        continue
+      }
+    }
+    let decoded = path
+    try {
+      decoded = decodeURIComponent(path)
+    } catch {
+      // garde le chemin tel quel
+    }
+    if (decoded.startsWith(dirPath)) {
+      const child = decoded.slice(dirPath.length)
+      if (child && !child.endsWith('/')) out.push(child)
+    }
+  }
+  return [...new Set(out)]
+}
+
+/** Liste les fichiers d'un dossier distant WebDAV (PROPFIND Depth: 1). */
+async function listRemoteFiles(config: CloudConfig, dirUrl: string): Promise<string[]> {
+  const res = await fetch(dirUrl, {
+    method: 'PROPFIND',
+    headers: { ...authHeader(config), Depth: '1', 'Content-Type': 'application/xml; charset=utf-8' },
+    body: '<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><prop><resourcetype/></prop></propfind>',
+  })
+  if (res.status === 404) return []
+  if (!res.ok && res.status !== 207) throw new Error(`Échec du listage distant (HTTP ${res.status})`)
+  return parsePropfindHrefs(await res.text(), dirUrl)
 }
 
 export interface SyncStatus {
@@ -102,21 +191,49 @@ export function lastSyncStatus(projectId: string): SyncStatus | null {
   }
 }
 
+/** Télécharge le projet distant en multi-fichiers (ou l'ancien fichier unique v1). */
+async function pullProjectSnapshot(
+  cfg: CloudConfig,
+  projectId: string,
+): Promise<{ snapshot: ProjectSnapshot; legacyUrl: string | null } | null> {
+  const baseJson = await fetchText(cfg, cloudBaseFileUrl(cfg, projectId))
+  if (baseJson) {
+    const files: ProjectFiles = new Map([[BASE_FILE_NAME, baseJson]])
+    const chaptersDir = cloudChaptersDirUrl(cfg, projectId)
+    for (const name of (await listRemoteFiles(cfg, chaptersDir)).filter((n) => n.endsWith('.md'))) {
+      const txt = await fetchText(cfg, `${chaptersDir}${encodeURIComponent(name)}`)
+      if (txt) files.set(`${CHAPTERS_DIR}/${name}`, txt)
+    }
+    const dialoguesDir = cloudDialoguesDirUrl(cfg, projectId)
+    for (const name of (await listRemoteFiles(cfg, dialoguesDir)).filter((n) => n.endsWith('.json'))) {
+      const txt = await fetchText(cfg, `${dialoguesDir}${encodeURIComponent(name)}`)
+      if (txt) files.set(`${DIALOGUES_DIR}/${name}`, txt)
+    }
+    return { snapshot: projectFilesToSnapshot(files), legacyUrl: null }
+  }
+  const legacyUrl = cloudFilePath(cfg, projectId)
+  const legacyJson = await fetchText(cfg, legacyUrl)
+  if (legacyJson) return { snapshot: parseSnapshot(legacyJson), legacyUrl }
+  return null
+}
+
 /**
- * Synchronise un projet avec le cloud : télécharge le snapshot distant,
- * fusionne (entité par entité, la plus récente gagne), réapplique en local
- * si besoin, puis renvoie le snapshot fusionné.
+ * Synchronise un projet avec le cloud en plusieurs fichiers :
+ * `<id-projet>/project.json` (base), `chapters/<id>.md` (un Markdown par
+ * chapitre) et `dialogues/<id>.json` (un JSON par scène). Le snapshot distant
+ * est fusionné entité par entité (la plus récente gagne), réappliqué en local
+ * si besoin, puis renvoyé. L'ancien fichier unique `<id-projet>.json` (v1)
+ * est automatiquement migré puis supprimé.
  */
 export async function syncProjectWithCloud(projectId: string, config?: CloudConfig | null): Promise<SyncStatus> {
   const cfg = config === undefined ? loadCloudConfig() : config
   if (!cfg || !cfg.enabled) throw new Error('Synchronisation cloud non configurée ou désactivée.')
   const local = await buildSnapshot(projectId)
-  const remoteJson = await pullSnapshotFromCloud(cfg, projectId)
+  const pulled = await pullProjectSnapshot(cfg, projectId)
   let snapshot: ProjectSnapshot = local
   let action: SyncStatus['action'] = 'pushed'
-  if (remoteJson) {
-    const remote = parseSnapshot(remoteJson)
-    const merged = mergeSnapshots(local, remote)
+  if (pulled) {
+    const merged = mergeSnapshots(local, pulled.snapshot)
     if (serializeSnapshot(merged) !== serializeSnapshot(local)) {
       await applySnapshot(merged, 'replace')
       snapshot = merged
@@ -127,7 +244,23 @@ export async function syncProjectWithCloud(projectId: string, config?: CloudConf
   } else {
     action = 'nothing-remote'
   }
-  await pushSnapshotToCloud(cfg, projectId, serializeSnapshot(snapshot))
+  const files = snapshotToProjectFiles(snapshot)
+  for (const [path, content] of files) {
+    let url: string
+    let type: string
+    if (path === BASE_FILE_NAME) {
+      url = cloudBaseFileUrl(cfg, projectId)
+      type = 'application/json; charset=utf-8'
+    } else if (path.startsWith(`${CHAPTERS_DIR}/`) && path.endsWith('.md')) {
+      url = cloudChapterFileUrl(cfg, projectId, path.slice(CHAPTERS_DIR.length + 1, -'.md'.length))
+      type = 'text/markdown; charset=utf-8'
+    } else {
+      url = cloudDialogueFileUrl(cfg, projectId, path.slice(DIALOGUES_DIR.length + 1, -'.json'.length))
+      type = 'application/json; charset=utf-8'
+    }
+    await putText(cfg, url, content, type)
+  }
+  if (pulled?.legacyUrl) await deleteRemote(cfg, pulled.legacyUrl)
   const status: SyncStatus = { at: Date.now(), projectId, action }
   localStorage.setItem(lastSyncKey(projectId), JSON.stringify(status))
   return status
