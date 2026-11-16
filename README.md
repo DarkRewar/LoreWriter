@@ -115,3 +115,19 @@ src/
 
 React 18 + TypeScript + Vite, React Router, Dexie (IndexedDB), TipTap (éditeur riche), Cytoscape (diagramme de
 relations), vite-plugin-pwa (PWA), Vitest (tests). Aucune dépendance serveur : la donnée appartient à l'utilisateur.
+
+## Workflow Git (gitflow simplifié, branche par défaut : `main`)
+
+- **`main` est la branche par défaut et de référence** (protégée recommandée : Settings → Branches → règle sur
+  `main` : PR obligatoire + checks CI requis).
+- **Nouveau travail** : toujours partir de `main` à jour —
+  `git checkout main && git pull && git checkout -b feature/<sujet>` (ou `fix/<sujet>`).
+- **Pendant le travail** : commits sur la branche de fonctionnalité, push régulier, PR vers `main` quand prêt
+  (voir `.github/PULL_REQUEST_TEMPLATE.md`).
+- **Avant de merger** : rebase puis merge — `git fetch origin && git rebase origin/main`, résoudre les conflits,
+  `git push --force-with-lease`, attendre la CI verte, puis merger (fast-forward après rebase = historique linéaire ;
+  squash possible si préféré).
+- **Après le merge** : supprimer la branche de fonctionnalité (localement et sur le distant).
+- **Releases** : tag `vX.Y.Z` poussé depuis `main` (ou release publiée dans l'UI) → déploiement automatique sur
+  GitHub Pages (voir section « Déploiement automatique sur GitHub Pages »).
+- **Branches** : `main` (défaut) + branches de fonctionnalité temporaires `feature/**`, `fix/**`.
