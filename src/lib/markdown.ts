@@ -11,6 +11,7 @@ interface HtmlNode {
   tag: string
   children: HtmlNode[]
   text?: string
+  attrs?: Record<string, string>
 }
 
 const VOID_TAGS = new Set(['br', 'hr', 'img', 'input'])
@@ -44,7 +45,9 @@ function parseHtmlFragment(html: string): HtmlNode[] {
       const selfClose = tok.endsWith('/>')
       const m = /^<([a-zA-Z][a-zA-Z0-9]*)/.exec(tok)
       const tag = m ? m[1].toLowerCase() : 'span'
-      const el: HtmlNode = { tag, children: [] }
+      const attrs: Record<string, string> = {}
+      for (const am of tok.matchAll(/([a-zA-Z-]+)="([^"]*)"/g)) attrs[am[1].toLowerCase()] = decodeEntities(am[2])
+      const el: HtmlNode = { tag, children: [], attrs }
       stack[stack.length - 1].children.push(el)
       if (!selfClose && !VOID_TAGS.has(tag)) stack.push(el)
     } else {
@@ -87,6 +90,10 @@ function inlineMd(nodes: HtmlNode[]): string {
     } else if (n.tag === 'code') {
       const inner = inlineMd(n.children).replace(/`/g, '')
       out += inner ? `\`${inner}\`` : ''
+    } else if (n.tag === 'a') {
+      const inner = inlineMd(n.children)
+      const href = n.attrs?.href ?? ''
+      out += inner && href ? `[${inner}](${href})` : inner
     } else {
       out += inlineMd(n.children)
     }

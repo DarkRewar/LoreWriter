@@ -21,6 +21,10 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   interne, utile dans l'app desktop). Chaque chapitre peut être téléchargé individuellement en **Markdown**
   (`*.md`) et est sauvegardé comme un **fichier dédié** dans les exports multi-fichiers et la synchro cloud.
 - **Intrigues** : titre, synopsis, statut, tags et personnages impliqués.
+- **Mentions « @ »** dans les éditeurs riches (chapitres, wiki, répliques de dialogues) : taper `@` + lettres
+  ouvre une popup avec les 3 meilleures entités (personnages, wiki, dialogues, romans, intrigues) ; le choix insère
+  un lien cliquable `@Label` qui ouvre la page de l'entité. Les mentions sont exportées en Markdown
+  (`[@Label](mention://kind/id)`).
 - **Wiki (dictionnaire de l'univers)** : entrées par projet avec un **intitulé** et une **description en éditeur
   riche** (comme les chapitres, exportable en `.md`), liste filtrable, recherche globale dédiée, persistance dans
   le `.lore` et la synchro cloud (`wiki/<id>.md`).

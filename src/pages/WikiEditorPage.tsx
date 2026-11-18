@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db'
-import { useProjectId, useSaveFlush } from '../hooks'
+import { useMentionItems, useProjectId, useSaveFlush } from '../hooks'
 import { RichTextEditor } from '../components/RichTextEditor'
 import { wordCount } from '../lib/text'
 import { serializeWikiFile } from '../lib/markdown'
@@ -10,6 +10,7 @@ import { downloadFile } from '../lib/queries'
 
 export default function WikiEditorPage() {
   const projectId = useProjectId()
+  const mentionItems = useMentionItems()
   const { entryId } = useParams()
   const navigate = useNavigate()
   const entry = useLiveQuery(() => (entryId ? db.wikiEntries.get(entryId) : undefined), [entryId])
@@ -114,6 +115,7 @@ export default function WikiEditorPage() {
         <RichTextEditor
           content={content}
           onUpdate={onContent}
+          mentions={mentionItems}
           placeholder="Décris ce terme de l’univers ici… origine, histoire, coutumes…"
           footer={
             <>

@@ -1,7 +1,10 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import { buildMentionExtension } from '../lib/tiptapMention'
+import { useProjectId } from '../hooks'
+import type { MentionRef } from '../lib/mentions'
 
 function ToolbarButton({
   active,
@@ -42,17 +45,32 @@ export function RichTextEditor({
   onUpdate,
   placeholder,
   footer,
+  compact = false,
+  mentions,
 }: {
   content: string
   onUpdate: (html: string) => void
   placeholder?: string
   footer?: ReactNode
+  /** Mode compact : sans barre d'outils (ex. répliques de dialogue). */
+  compact?: boolean
+  /** Active les mentions « @ » ; retourne la liste des entités référençables. */
+  mentions?: () => MentionRef[]
 }) {
+  const projectId = useProjectId()
+  const mentionExt = useMemo(
+    () => (mentions ? buildMentionExtension(mentions, projectId) : null),
+    [mentions, projectId],
+  )
   const editor = useEditor({
-    extensions: [StarterKit, Placeholder.configure({ placeholder: placeholder ?? 'Écris ton histoire ici…' })],
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ placeholder: placeholder ?? 'Écris ton histoire ici…' }),
+      ...(mentionExt ? [mentionExt] : []),
+    ],
     content,
     onUpdate: ({ editor: ed }) => onUpdate(ed.getHTML()),
-  })
+  }, [mentionExt])
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -63,7 +81,8 @@ export function RichTextEditor({
   if (!editor) return null
 
   return (
-    <div className="rich-editor">
+    <div className={`rich-editor${compact ? ' compact' : ''}`}>
+      {!compact && (
       <div className="rich-toolbar" role="toolbar" aria-label="Mise en forme du texte">
         <ToolbarButton
           className="tb-b"
@@ -141,6 +160,7 @@ export function RichTextEditor({
           ↷
         </ToolbarButton>
       </div>
+      )}
       <EditorContent editor={editor} className="rich-content" />
       {footer && <div className="rich-status">{footer}</div>}
     </div>

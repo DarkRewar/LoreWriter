@@ -2,13 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useParams } from 'react-router-dom'
 import { db } from '../db'
-import { useProjectId, useSaveFlush } from '../hooks'
+import { RichTextEditor } from '../components/RichTextEditor'
+import { useMentionItems, useProjectId, useSaveFlush } from '../hooks'
 import { newId } from '../lib/ids'
 import type { DialogueLine, DialogueScene } from '../types'
 import { characterDisplayName } from '../types'
 
 export default function DialogueEditorPage() {
   const projectId = useProjectId()
+  const mentionItems = useMentionItems()
   const { sceneId } = useParams()
   const [preview, setPreview] = useState(false)
 
@@ -156,7 +158,9 @@ export default function DialogueEditorPage() {
           {draft.lines.map((l) => (
             <div key={l.id} className={`line${l.characterId ? '' : ' narrator'}`}>
               <span className="speaker">{who(l.characterId)} :</span>{' '}
-              <span>{l.text}</span>
+              <span>
+                {l.text.includes('<') ? <span dangerouslySetInnerHTML={{ __html: l.text }} /> : l.text}
+              </span>
             </div>
           ))}
         </div>
@@ -173,12 +177,15 @@ export default function DialogueEditorPage() {
                   </option>
                 ))}
               </select>
-              <textarea
-                value={l.text}
-                rows={Math.max(1, l.text.split('\n').length)}
-                placeholder="Réplique…"
-                onChange={(e) => updateLine(l.id, { text: e.target.value })}
-              />
+              <div className="line-editor">
+                <RichTextEditor
+                  compact
+                  mentions={mentionItems}
+                  content={l.text}
+                  onUpdate={(html) => updateLine(l.id, { text: html })}
+                  placeholder="Réplique… (@ pour mentionner)"
+                />
+              </div>
               <div className="line-actions">
                 <button type="button" className="btn-icon" title="Monter" onClick={() => moveLine(l.id, -1)}>
                   ↑

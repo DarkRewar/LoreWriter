@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useSearchParams } from 'react-router-dom'
 import { db } from '../db'
-import { useProjectId, useSaveFlush } from '../hooks'
+import { useMentionItems, useProjectId, useSaveFlush } from '../hooks'
 import { newId } from '../lib/ids'
 import { RichTextEditor } from '../components/RichTextEditor'
 import { wordCount } from '../lib/text'
@@ -12,6 +12,7 @@ import type { Chapter, Novel } from '../types'
 
 export default function NovelPage() {
   const projectId = useProjectId()
+  const mentionItems = useMentionItems()
   const [searchParams] = useSearchParams()
   const novelParam = searchParams.get('novel')
 
@@ -315,6 +316,7 @@ export default function NovelPage() {
             <RichTextEditor
               content={content}
               onUpdate={onContent}
+              mentions={mentionItems}
               placeholder="Écris ce chapitre ici… respire, prends ton temps."
               footer={
                 <>

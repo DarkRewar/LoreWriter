@@ -743,6 +743,61 @@ table.data tbody tr:hover { background: var(--panel-2); }
   pointer-events: none;
 }
 
+/* mentions « @ » dans l'éditeur riche */
+.rich-content .ProseMirror a.mention,
+a.mention {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 0 4px;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+a.mention:hover { background: var(--accent); color: #fff9f2; }
+
+.mention-list {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  min-width: 220px;
+  max-width: 320px;
+}
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 9px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+}
+.mention-item:hover, .mention-item.active { background: var(--bg-soft); }
+.mention-kind {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-2);
+  background: var(--accent-2-soft);
+  border-radius: 999px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.mention-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rich-editor.compact { border-radius: 10px; box-shadow: none; }
+.rich-editor.compact .rich-content { padding: 8px 10px; min-height: 0; font-family: var(--font-sans); font-size: 14.5px; line-height: 1.5; color: var(--text); }
+.rich-editor.compact .rich-content .ProseMirror { min-height: 0; }
+.line-editor { min-width: 0; }
+
 .rich-status {
   display: flex;
   justify-content: space-between;
