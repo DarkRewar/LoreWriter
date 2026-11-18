@@ -150,6 +150,7 @@ export function buildMentionExtension(getItems: () => MentionRef[], projectId: s
         const clientRect = (props: MentionSuggestionProps) => () => props.clientRect?.() ?? new DOMRect()
         return {
           onStart: (props: MentionSuggestionProps) => {
+            if (props.items.length === 0) return
             const hide = () => popup?.[0]?.hide()
             component = new ReactRenderer(MentionList, { props: { suggestion: props, hide }, editor: props.editor as Editor })
             popup = tippy(document.body, {
@@ -160,9 +161,14 @@ export function buildMentionExtension(getItems: () => MentionRef[], projectId: s
               interactive: true,
               trigger: 'manual',
               placement: 'bottom-start',
+              theme: 'mention',
             }) as unknown as TippyInstance[]
           },
           onUpdate: (props: MentionSuggestionProps) => {
+            if (props.items.length === 0) {
+              popup?.[0]?.hide()
+              return
+            }
             component?.updateProps({ suggestion: props, hide: () => popup?.[0]?.hide() })
             popup?.[0]?.setProps({ getReferenceClientRect: clientRect(props) })
           },
