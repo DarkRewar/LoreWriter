@@ -42,6 +42,7 @@ export default function NovelPage() {
   const [content, setContent] = useState('')
   const [title, setTitle] = useState('')
   const [newNovelTitle, setNewNovelTitle] = useState('')
+  const [panelOpen, setPanelOpen] = useState(true)
 
   const selected = useMemo(() => {
     if (!chapters || chapters.length === 0) return null
@@ -188,7 +189,20 @@ export default function NovelPage() {
       <div className={`novel-layout${focus ? ' focus' : ''}`}>
         {!focus && (
           <div className="panel">
-            <h2>Romans ({novels?.length ?? 0})</h2>
+            <div className="panel-head">
+              <h2 style={{ margin: 0 }}>Romans ({novels?.length ?? 0})</h2>
+              <button
+                type="button"
+                className="btn-icon"
+                title={panelOpen ? 'Replier la liste romans/chapitres' : 'Déplier la liste romans/chapitres'}
+                aria-expanded={panelOpen}
+                onClick={() => setPanelOpen((o) => !o)}
+              >
+                {panelOpen ? '▾' : '▸'}
+              </button>
+            </div>
+            {panelOpen && (
+            <>
             {!novels || novels.length === 0 ? (
               <p className="muted">Aucun roman.</p>
             ) : (
@@ -249,7 +263,10 @@ export default function NovelPage() {
                   <div
                     key={c.id}
                     className={`chapter-item${selected?.id === c.id ? ' active' : ''}`}
-                    onClick={() => setSelectedId(c.id)}
+                    onClick={() => {
+                      setSelectedId(c.id)
+                      if (window.innerWidth <= 860) setPanelOpen(false)
+                    }}
                   >
                     <span className="title">
                       {i + 1}. {c.title || 'Sans titre'}
@@ -280,6 +297,8 @@ export default function NovelPage() {
                   </div>
                 ))}
               </div>
+            )}
+            </>
             )}
           </div>
         )}

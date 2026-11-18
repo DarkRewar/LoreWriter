@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import TopbarSearch from './components/TopbarSearch'
 import SaveButton from './components/SaveButton'
+import BurgerMenu from './components/BurgerMenu'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectLayout from './pages/ProjectLayout'
 import DashboardPage from './pages/DashboardPage'
@@ -21,6 +22,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <BurgerMenu />
         <Link to="/" className="brand">
           ✒️ LoreWriter
         </Link>

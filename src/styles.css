@@ -147,6 +147,32 @@ a:hover { color: var(--accent-strong); }
   animation: pop-in 0.18s ease both;
 }
 
+.burger { position: relative; display: none; flex-shrink: 0; }
+.burger-btn { font-size: 20px; padding: 7px 10px; }
+.burger-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 240px;
+  max-width: 86vw;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  z-index: 60;
+  animation: pop-in 0.18s ease both;
+}
+.burger-section { display: flex; flex-direction: column; }
+.burger-section + .burger-section { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+.burger-section-title { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 4px 10px 6px; }
+.burger-menu a { display: block; padding: 9px 10px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 14.5px; }
+.burger-menu a:hover { background: var(--bg-soft); }
+
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+
 .topbar-search { position: relative; flex: 1 1 260px; max-width: 520px; }
 .topbar-search input { width: 100%; border-radius: 999px; padding-left: 34px; }
 .topbar-search input::placeholder { color: var(--muted); }
@@ -390,6 +416,10 @@ a.project-card { text-decoration: none; color: var(--text); }
   .chapter-item { padding: 12px; }
   /* clavier virtuel : zone d'écriture moins haute pour garder le curseur visible */
   .rich-content .ProseMirror { min-height: 40vh; }
+  /* burger menu : la nav topbar et la sidebar passent dans le burger */
+  .burger { display: flex; }
+  .app-nav { display: none; }
+  .sidebar { display: none; }
 }
 
 /* ---------- personnages ---------- */
