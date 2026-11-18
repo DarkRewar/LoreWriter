@@ -376,6 +376,20 @@ a.project-card { text-decoration: none; color: var(--text); }
   .sidebar-nav a:hover { transform: none; }
   .sidebar-nav a.active::before { display: none; }
   .page { padding: 18px 14px; }
+
+  /* tactile : topbar en 2 lignes (marque + 💾 + nav, puis recherche pleine largeur) */
+  .topbar-search { order: 10; flex: 1 1 100%; max-width: none; }
+  /* iOS zoome au focus si font-size < 16px */
+  input, select, textarea { font-size: 16px; }
+  /* cibles tactiles confortables + suppression du délai double-tap */
+  a, button { touch-action: manipulation; }
+  .btn { padding: 11px 18px; }
+  .btn-icon { padding: 9px 11px; font-size: 17px; }
+  .tb-btn { min-width: 40px; min-height: 40px; padding: 7px 10px; font-size: 15px; }
+  .sidebar-nav a { padding: 9px 13px; }
+  .chapter-item { padding: 12px; }
+  /* clavier virtuel : zone d'écriture moins haute pour garder le curseur visible */
+  .rich-content .ProseMirror { min-height: 40vh; }
 }
 
 /* ---------- personnages ---------- */
