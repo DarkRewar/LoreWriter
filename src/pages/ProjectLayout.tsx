@@ -5,17 +5,12 @@ import { loadCloudConfig, lastSyncStatus, type SyncStatus } from '../lib/cloud'
 import { syncProjectWithBackup } from '../lib/backup'
 import SyncNowButton from '../components/SyncNowButton'
 import { projectNavItems } from '../nav'
-
-const ACTION_LABELS: Record<SyncStatus['action'], string> = {
-  pushed: 'envoyé vers le cloud',
-  'pulled-merged': 'fusionné avec le cloud',
-  'up-to-date': 'déjà à jour',
-  'nothing-remote': 'premier envoi vers le cloud',
-}
+import { useI18n, type MessageKey } from '../i18n'
 
 export default function ProjectLayout() {
   const projectId = useProjectId()
   const project = useProject()
+  const { t, dateLocale } = useI18n()
   const [syncMsg, setSyncMsg] = useState<string | null>(null)
   const [lastSync, setLastSync] = useState<SyncStatus | null>(() => lastSyncStatus(projectId))
 
@@ -28,9 +23,11 @@ export default function ProjectLayout() {
         const st = await syncProjectWithBackup(projectId)
         if (cancelled) return
         setLastSync(st)
-        setSyncMsg(`☁️ ${ACTION_LABELS[st.action]} à ${new Date(st.at).toLocaleTimeString('fr-FR')}`)
+        const action = t(`layout.syncActions.${st.action}` as MessageKey)
+        setSyncMsg(`☁️ ${action} · ${new Date(st.at).toLocaleTimeString(dateLocale)}`)
       } catch (err) {
-        if (!cancelled) setSyncMsg(`☁️ erreur de synchro : ${err instanceof Error ? err.message : 'inconnue'}`)
+        if (!cancelled)
+          setSyncMsg(t('layout.syncError', { error: err instanceof Error ? err.message : t('common.unknownError') }))
       }
     }
     void run()
@@ -39,25 +36,25 @@ export default function ProjectLayout() {
       cancelled = true
       clearInterval(timer)
     }
-  }, [projectId])
+  }, [projectId, t, dateLocale])
 
   if (!project) {
     return (
       <div className="page">
-        <p>Projet introuvable.</p>
-        <Link to="/">← Retour aux projets</Link>
+        <p>{t('layout.projectNotFound')}</p>
+        <Link to="/">{t('layout.backToProjects')}</Link>
       </div>
     )
   }
 
   const base = `/projects/${projectId}`
-  const items = projectNavItems(base)
+  const items = projectNavItems(base, t)
 
   return (
     <div className="project-layout">
       <aside className="sidebar">
         <Link to="/" className="sidebar-back">
-          ← Tous les projets
+          {t('layout.backToProjects')}
         </Link>
         <h2 className="sidebar-title">{project.name}</h2>
         <nav className="sidebar-nav">
@@ -69,9 +66,9 @@ export default function ProjectLayout() {
         </nav>
         <div className="sidebar-footer">
           <SyncNowButton />
-          <Link to="/cloud">☁️ Configurer le cloud</Link>
+          <Link to="/cloud">{t('layout.configureCloud')}</Link>
           {lastSync && !syncMsg && (
-            <div className="sync-msg">☁️ dernière synchro : {new Date(lastSync.at).toLocaleString('fr-FR')}</div>
+            <div className="sync-msg">☁️ {t('layout.lastSync', { date: new Date(lastSync.at).toLocaleString(dateLocale) })}</div>
           )}
           {syncMsg && <div className="sync-msg">{syncMsg}</div>}
         </div>

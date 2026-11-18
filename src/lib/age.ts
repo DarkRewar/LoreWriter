@@ -18,13 +18,18 @@ export function computeAge(birthDateISO: string, now: Date = new Date()): number
   return age
 }
 
-export function formatDateFr(iso: string): string {
+/** Date ISO -> texte localisé (ex. « 17 mai 1990 » / « May 17, 1990 » selon la locale BCP-47). */
+export function formatDate(iso: string, locale = 'fr-FR'): string {
   const d = parseBirthDate(iso)
   if (!d) return ''
-  return d.toLocaleDateString('fr-FR', {
+  return d.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
   })
+}
+
+export function formatDateFr(iso: string): string {
+  return formatDate(iso, 'fr-FR')
 }

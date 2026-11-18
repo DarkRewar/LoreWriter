@@ -8,9 +8,11 @@ import { newId } from '../lib/ids'
 import type { DialogueLine, DialogueScene } from '../types'
 import { characterDisplayName } from '../types'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useI18n } from '../i18n'
 
 export default function DialogueEditorPage() {
   const confirm = useConfirm()
+  const { t, dateLocale } = useI18n()
   const projectId = useProjectId()
   const mentionItems = useMentionItems()
   const { sceneId } = useParams()
@@ -23,7 +25,7 @@ export default function DialogueEditorPage() {
         .where('projectId')
         .equals(projectId)
         .toArray()
-        .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), 'fr'))),
+        .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), dateLocale))),
     [projectId],
   )
   const plots = useLiveQuery(
@@ -32,7 +34,7 @@ export default function DialogueEditorPage() {
         .where('projectId')
         .equals(projectId)
         .toArray()
-        .then((list) => list.sort((a, b) => a.title.localeCompare(b.title, 'fr'))),
+        .then((list) => list.sort((a, b) => a.title.localeCompare(b.title, dateLocale))),
     [projectId],
   )
 
@@ -79,8 +81,8 @@ export default function DialogueEditorPage() {
   if (!scene || !draft) {
     return (
       <div className="page">
-        <p>Scène introuvable.</p>
-        <Link to={`/projects/${projectId}/dialogues`}>← Retour aux dialogues</Link>
+        <p>{t('dialogues.editor.sceneNotFound')}</p>
+        <Link to={`/projects/${projectId}/dialogues`}>{t('dialogues.editor.backToDialogues')}</Link>
       </div>
     )
   }
@@ -94,7 +96,7 @@ export default function DialogueEditorPage() {
     update({ lines: [...draft.lines, { id: newId(), characterId: characters?.[0]?.id ?? '', text: '' }] })
 
   const removeLine = async (id: string) => {
-    if (!(await confirm({ message: 'Supprimer cette réplique ?' }))) return
+    if (!(await confirm({ message: t('dialogues.editor.deleteLineConfirm') }))) return
     update({ lines: draft.lines.filter((l) => l.id !== id) })
   }
 
@@ -108,46 +110,46 @@ export default function DialogueEditorPage() {
   }
 
   const who = (id: string) => {
-    if (!id) return 'Narrateur'
+    if (!id) return t('dialogues.editor.narrator')
     const c = characters?.find((x) => x.id === id)
-    return c ? characterDisplayName(c) : 'Narrateur'
+    return c ? characterDisplayName(c) : t('dialogues.editor.narrator')
   }
 
   return (
     <div className="page">
       <div className="toolbar">
-        <Link to={`/projects/${projectId}/dialogues`}>← Dialogues</Link>
+        <Link to={`/projects/${projectId}/dialogues`}>{t('dialogues.editor.back')}</Link>
         <input
           type="text"
           value={draft.title}
           onChange={(e) => update({ title: e.target.value })}
-          placeholder="Titre de la scène"
+          placeholder={t('dialogues.editor.titlePlaceholder')}
           style={{ flex: 1, minWidth: 200, fontWeight: 600 }}
         />
         <div className="view-toggle">
           <button type="button" className={!preview ? 'active' : ''} onClick={() => setPreview(false)}>
-            ✏️ Édition
+            {t('dialogues.editor.edit')}
           </button>
           <button type="button" className={preview ? 'active' : ''} onClick={() => setPreview(true)}>
-            👁️ Aperçu
+            {t('dialogues.editor.preview')}
           </button>
         </div>
       </div>
 
       <div className="panel">
         <label className="field">
-          <span>Description de la scène (optionnel)</span>
+          <span>{t('dialogues.editor.descLabel')}</span>
           <input
             type="text"
             value={draft.description}
             onChange={(e) => update({ description: e.target.value })}
-            placeholder="Où se passe la scène, dans quelles circonstances…"
+            placeholder={t('dialogues.editor.descPlaceholder')}
           />
         </label>
         <label className="field">
-          <span>Intrigue liée (optionnel)</span>
+          <span>{t('dialogues.editor.plotLabel')}</span>
           <select value={draft.plotId ?? ''} onChange={(e) => update({ plotId: e.target.value })}>
-            <option value="">— Aucune intrigue —</option>
+            <option value="">{t('dialogues.editor.noPlot')}</option>
             {(plots ?? []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title || 'Sans titre'}
@@ -159,7 +161,7 @@ export default function DialogueEditorPage() {
 
       {preview ? (
         <div key="preview" className="dialogue-preview view-anim">
-          {draft.lines.length === 0 && <p className="muted">Aucune réplique pour l'instant.</p>}
+          {draft.lines.length === 0 && <p className="muted">{t('dialogues.editor.noLines')}</p>}
           {draft.lines.map((l) => (
             <div key={l.id} className={`line${l.characterId ? '' : ' narrator'}`}>
               <span className="speaker">{who(l.characterId)} :</span>{' '}
@@ -171,11 +173,11 @@ export default function DialogueEditorPage() {
         </div>
       ) : (
         <div key="editor" className="panel view-anim">
-          <h2>Répliques ({draft.lines.length})</h2>
+          <h2>{t('dialogues.editor.linesTitle', { n: draft.lines.length })}</h2>
           {draft.lines.map((l) => (
             <div className="line-row" key={l.id}>
               <select value={l.characterId} onChange={(e) => updateLine(l.id, { characterId: e.target.value })}>
-                <option value="">Narrateur</option>
+                <option value="">{t('dialogues.editor.narrator')}</option>
                 {(characters ?? []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {characterDisplayName(c)}
@@ -188,24 +190,24 @@ export default function DialogueEditorPage() {
                   mentions={mentionItems}
                   content={l.text}
                   onUpdate={(html) => updateLine(l.id, { text: html })}
-                  placeholder="Réplique… (@ pour mentionner)"
+                  placeholder={t('dialogues.editor.linePlaceholder')}
                 />
               </div>
               <div className="line-actions">
-                <button type="button" className="btn-icon" title="Monter" onClick={() => moveLine(l.id, -1)}>
+                <button type="button" className="btn-icon" title={t('dialogues.editor.up')} onClick={() => moveLine(l.id, -1)}>
                   ↑
                 </button>
-                <button type="button" className="btn-icon" title="Descendre" onClick={() => moveLine(l.id, 1)}>
+                <button type="button" className="btn-icon" title={t('dialogues.editor.down')} onClick={() => moveLine(l.id, 1)}>
                   ↓
                 </button>
-                <button type="button" className="btn-icon" title="Supprimer" onClick={() => void removeLine(l.id)}>
+                <button type="button" className="btn-icon" title={t('dialogues.editor.delete')} onClick={() => void removeLine(l.id)}>
                   🗑
                 </button>
               </div>
             </div>
           ))}
           <button type="button" className="btn btn-primary" onClick={addLine}>
-            + Ajouter une réplique
+            {t('dialogues.editor.addLine')}
           </button>
         </div>
       )}

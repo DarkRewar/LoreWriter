@@ -2,7 +2,9 @@ import { Link, Route, Routes } from 'react-router-dom'
 import TopbarSearch from './components/TopbarSearch'
 import SaveButton from './components/SaveButton'
 import BurgerMenu from './components/BurgerMenu'
+import LanguageMenu from './components/LanguageMenu'
 import { ConfirmProvider } from './components/ConfirmDialog'
+import { I18nProvider, useI18n } from './i18n'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectLayout from './pages/ProjectLayout'
 import DashboardPage from './pages/DashboardPage'
@@ -21,7 +23,8 @@ import SearchPage from './pages/SearchPage'
 import ProjectSettingsPage from './pages/ProjectSettingsPage'
 import CloudSettingsPage from './pages/CloudSettingsPage'
 
-export default function App() {
+function AppShell() {
+  const { t } = useI18n()
   return (
     <ConfirmProvider>
     <div className="app">
@@ -30,11 +33,12 @@ export default function App() {
         <Link to="/" className="brand">
           ✒️ LoreWriter
         </Link>
+        <LanguageMenu />
         <TopbarSearch />
         <SaveButton />
         <nav className="app-nav">
-          <Link to="/">Projets</Link>
-          <Link to="/cloud">☁️ Cloud</Link>
+          <Link to="/">{t('app.projects')}</Link>
+          <Link to="/cloud">{t('app.cloud')}</Link>
         </nav>
       </header>
       <main className="app-main">
@@ -63,8 +67,8 @@ export default function App() {
             path="*"
             element={
               <div className="page">
-                <h1>Page introuvable</h1>
-                <Link to="/">Retour à l'accueil</Link>
+                <h1>{t('app.notFoundTitle')}</h1>
+                <Link to="/">{t('app.backHome')}</Link>
               </div>
             }
           />
@@ -72,5 +76,13 @@ export default function App() {
       </main>
     </div>
     </ConfirmProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <AppShell />
+    </I18nProvider>
   )
 }

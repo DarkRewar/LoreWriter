@@ -1,40 +1,36 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useMatch } from 'react-router-dom'
 import { db } from '../db'
-import { loadCloudConfig, type SyncStatus } from '../lib/cloud'
+import { loadCloudConfig } from '../lib/cloud'
 import { syncProjectWithBackup } from '../lib/backup'
 import { requestSaveNow } from '../lib/save'
-
-const ACTION_LABELS: Record<SyncStatus['action'], string> = {
-  pushed: 'envoyé vers le cloud',
-  'pulled-merged': 'fusionné avec le cloud',
-  'up-to-date': 'déjà à jour sur le cloud',
-  'nothing-remote': 'premier envoi vers le cloud',
-}
+import { useI18n, type MessageKey } from '../i18n'
 
 export default function SaveButton() {
   const match = useMatch('/projects/:projectId/*')
   const projectId = match?.params.projectId ?? ''
+  const { t, dateLocale } = useI18n()
   const [msg, setMsg] = useState<string | null>(null)
 
   const doSave = useCallback(async () => {
     if (!projectId) return
     requestSaveNow()
-    const time = new Date().toLocaleTimeString('fr-FR')
+    const time = new Date().toLocaleTimeString(dateLocale)
     try {
       const cfg = loadCloudConfig()
       if (cfg?.enabled) {
         const st = await syncProjectWithBackup(projectId, cfg)
-        setMsg(`💾 ${ACTION_LABELS[st.action]} · ${time}`)
+        const action = t(`layout.syncActions.${st.action}` as MessageKey)
+        setMsg(t('saveButton.savedCloud', { action, time }))
       } else {
         await db.projects.update(projectId, { updatedAt: Date.now() })
-        setMsg(`💾 Enregistré localement · ${time}`)
+        setMsg(t('saveButton.savedLocal', { time }))
       }
     } catch (err) {
-      setMsg(`💾 Erreur : ${err instanceof Error ? err.message : 'inconnue'}`)
+      setMsg(t('saveButton.saveError', { error: err instanceof Error ? err.message : t('common.unknownError') }))
     }
     window.setTimeout(() => setMsg(null), 3200)
-  }, [projectId])
+  }, [projectId, t, dateLocale])
 
   useEffect(() => {
     if (!projectId) return
@@ -55,8 +51,8 @@ export default function SaveButton() {
       <button
         type="button"
         className="btn-icon save-btn"
-        title="Enregistrer (Ctrl+S)"
-        aria-label="Enregistrer le projet"
+        title={t('saveButton.title')}
+        aria-label={t('saveButton.aria')}
         onClick={() => void doSave()}
       >
         💾

@@ -9,9 +9,11 @@ import { serializeWikiFile } from '../lib/markdown'
 import { normalizeForSearch, stripHtml } from '../lib/text'
 import type { WikiEntry } from '../types'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useI18n } from '../i18n'
 import { addTombstone } from '../lib/tombstones'
 
 export default function WikiPage() {
+  const { t } = useI18n()
   const confirm = useConfirm()
   const projectId = useProjectId()
   const navigate = useNavigate()
@@ -31,13 +33,13 @@ export default function WikiPage() {
   const addEntry = async () => {
     const now = Date.now()
     const id = newId()
-    await db.wikiEntries.add({ id, projectId, title: 'Nouvelle entrée', content: '', createdAt: now, updatedAt: now })
+    await db.wikiEntries.add({ id, projectId, title: t('wiki.newEntry'), content: '', createdAt: now, updatedAt: now })
     await db.projects.update(projectId, { updatedAt: now })
     navigate(`/projects/${projectId}/wiki/${id}`)
   }
 
-  const removeEntry = async (id: string) => {
-    if (!(await confirm({ message: 'Supprimer cette entrée du wiki ?' }))) return
+  const removeEntry = async (id: string, title: string) => {
+    if (!(await confirm({ message: t('wiki.deleteConfirm', { title: title || t('wiki.untitled') }) }))) return
     await addTombstone(projectId, 'wiki', id)
     await db.wikiEntries.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -51,37 +53,37 @@ export default function WikiPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <h1 style={{ margin: 0 }}>📚 Wiki</h1>
-        <span className="muted">{entries?.length ?? 0} entrée(s)</span>
+        <h1 style={{ margin: 0 }}>{t('wiki.title')}</h1>
+        <span className="muted">{t('dashboard.wikiCount', { n: entries?.length ?? 0 })}</span>
         <input
           type="search"
           className="search-input"
-          placeholder="Filtrer les entrées…"
+          placeholder={t('wiki.filterPlaceholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           style={{ marginLeft: 'auto' }}
         />
         <button type="button" className="btn btn-primary" onClick={addEntry}>
-          + Nouvelle entrée
+          {t('wiki.newEntry')}
         </button>
       </div>
 
       {filtered.length === 0 ? (
         <div className="panel">
           <p className="muted">
-            {entries?.length ? 'Aucune entrée ne correspond au filtre.' : 'Aucune entrée pour l’instant — créez la première pour définir votre univers. ✨'}
+            {entries?.length ? t('wiki.emptyFiltered') : t('wiki.empty')}
           </p>
         </div>
       ) : (
         <div className="chapter-list">
           {filtered.map((e) => (
             <div key={e.id} className="chapter-item" onClick={() => navigate(`/projects/${projectId}/wiki/${e.id}`)}>
-              <span className="title">📚 {e.title || 'Sans titre'}</span>
+              <span className="title">📚 {e.title || t('wiki.untitled')}</span>
               <span className="words">{stripHtml(e.content).slice(0, 80)}</span>
               <button
                 type="button"
                 className="btn-icon"
-                title="Télécharger cette entrée (.md)"
+                title={t('wiki.downloadEntry')}
                 onClick={(ev) => {
                   ev.stopPropagation()
                   downloadEntry(e)
@@ -92,10 +94,10 @@ export default function WikiPage() {
               <button
                 type="button"
                 className="btn-icon"
-                title="Supprimer l’entrée"
+                title={t('wiki.deleteEntryAria')}
                 onClick={(ev) => {
                   ev.stopPropagation()
-                  void removeEntry(e.id)
+                  void removeEntry(e.id, e.title)
                 }}
               >
                 🗑
@@ -105,7 +107,7 @@ export default function WikiPage() {
         </div>
       )}
       <p className="muted" style={{ marginTop: 12 }}>
-        <Link to={`/projects/${projectId}`}>← Retour au projet</Link>
+        <Link to={`/projects/${projectId}`}>← {t('app.projects')}</Link>
       </p>
     </div>
   )

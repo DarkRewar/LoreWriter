@@ -1,6 +1,8 @@
 import type { ChangeEvent } from 'react'
+import { useI18n } from '../i18n'
 
 export function PortraitPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useI18n()
   const onFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -23,18 +25,18 @@ export function PortraitPicker({ value, onChange }: { value: string; onChange: (
   return (
     <div className="portrait-picker">
       {value ? (
-        <img src={value} alt="Portrait" className="portrait-preview" />
+        <img src={value} alt={t('portrait.alt')} className="portrait-preview" />
       ) : (
         <div className="portrait-preview portrait-placeholder">🖼️</div>
       )}
       <div className="portrait-actions">
         <label className="btn">
-          Choisir une image
+          {t('portrait.choose')}
           <input type="file" accept="image/*" hidden onChange={onFile} />
         </label>
         {value && (
           <button type="button" className="btn btn-danger" onClick={() => onChange('')}>
-            Retirer
+            {t('portrait.remove')}
           </button>
         )}
       </div>

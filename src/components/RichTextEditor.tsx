@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { buildMentionExtension } from '../lib/tiptapMention'
 import { useProjectId } from '../hooks'
+import { useI18n } from '../i18n'
 import type { MentionRef } from '../lib/mentions'
 
 function ToolbarButton({
@@ -58,6 +59,7 @@ export function RichTextEditor({
   mentions?: () => MentionRef[]
 }) {
   const projectId = useProjectId()
+  const { t } = useI18n()
   const mentionExt = useMemo(
     () => (mentions ? buildMentionExtension(mentions, projectId) : null),
     [mentions, projectId],
@@ -65,12 +67,12 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: placeholder ?? 'Écris ton histoire ici…' }),
+      Placeholder.configure({ placeholder: placeholder ?? t('editor.placeholder') }),
       ...(mentionExt ? [mentionExt] : []),
     ],
     content,
     onUpdate: ({ editor: ed }) => onUpdate(ed.getHTML()),
-  }, [mentionExt])
+  }, [mentionExt, t])
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -83,10 +85,10 @@ export function RichTextEditor({
   return (
     <div className={`rich-editor${compact ? ' compact' : ''}`}>
       {!compact && (
-      <div className="rich-toolbar" role="toolbar" aria-label="Mise en forme du texte">
+      <div className="rich-toolbar" role="toolbar" aria-label={t('editor.toolbar')}>
         <ToolbarButton
           className="tb-b"
-          title="Gras (Ctrl+B)"
+          title={t('editor.bold')}
           active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
@@ -94,7 +96,7 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarButton
           className="tb-i"
-          title="Italique (Ctrl+I)"
+          title={t('editor.italic')}
           active={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
@@ -102,7 +104,7 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarButton
           className="tb-s"
-          title="Barré"
+          title={t('editor.strike')}
           active={editor.isActive('strike')}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
@@ -110,14 +112,14 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarSeparator />
         <ToolbarButton
-          title="Titre 2"
+          title={t('editor.h2')}
           active={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         >
           H2
         </ToolbarButton>
         <ToolbarButton
-          title="Titre 3"
+          title={t('editor.h3')}
           active={editor.isActive('heading', { level: 3 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         >
@@ -125,21 +127,21 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarSeparator />
         <ToolbarButton
-          title="Liste à puces"
+          title={t('editor.bullet')}
           active={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           • Liste
         </ToolbarButton>
         <ToolbarButton
-          title="Liste numérotée"
+          title={t('editor.ordered')}
           active={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           1. Liste
         </ToolbarButton>
         <ToolbarButton
-          title="Citation"
+          title={t('editor.quote')}
           active={editor.isActive('blockquote')}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
@@ -147,16 +149,16 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarSeparator />
         <ToolbarButton
-          title="Effacer la mise en forme"
+          title={t('editor.clear')}
           onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
         >
           ✕
         </ToolbarButton>
         <ToolbarSeparator />
-        <ToolbarButton title="Annuler (Ctrl+Z)" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
+        <ToolbarButton title={t('editor.undo')} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
           ↶
         </ToolbarButton>
-        <ToolbarButton title="Rétablir (Ctrl+Y)" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>
+        <ToolbarButton title={t('editor.redo')} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>
           ↷
         </ToolbarButton>
       </div>

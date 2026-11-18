@@ -1,5 +1,6 @@
 import { characterDisplayName, type Chapter, type Character, type DialogueScene, type Novel, type Plot, type Relationship, type WikiEntry } from '../types'
 import { relationshipTypeInfo } from './relationships'
+import { tStandalone, type MessageKey } from '../i18n'
 import { makeSnippet, normalizeForSearch, stripHtml } from './text'
 
 export type SearchKind = 'character' | 'relationship' | 'dialogue' | 'novel' | 'chapter' | 'plot' | 'wiki'
@@ -49,14 +50,11 @@ function scoreFields(fields: Field[], query: string): { score: number; matchedTe
   return { score, matchedText }
 }
 
-export const SEARCH_KIND_LABELS: Record<SearchKind, string> = {
-  character: 'Personnage',
-  relationship: 'Relation',
-  dialogue: 'Dialogue',
-  novel: 'Roman',
-  chapter: 'Chapitre',
-  plot: 'Intrigue',
-  wiki: 'Wiki',
+export const SEARCH_KINDS: SearchKind[] = ['character', 'relationship', 'dialogue', 'novel', 'chapter', 'plot', 'wiki']
+
+/** Label traduit d'un kind de résultat de recherche. */
+export function searchKindLabel(kind: SearchKind): string {
+  return tStandalone(`search.kinds.${kind}` as MessageKey)
 }
 
 export function searchEntities(input: SearchInput, rawQuery: string, limit = 50): SearchResult[] {
@@ -66,7 +64,7 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
 
   const charName = (id: string): string => {
     const c = input.characters.find((x) => x.id === id)
-    return c ? characterDisplayName(c) : 'Personnage supprimé'
+    return c ? characterDisplayName(c) : tStandalone('characters.deletedChar')
   }
 
   const plotTitle = (id: string): string => {
@@ -117,7 +115,7 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
         kind: 'relationship',
         id: r.id,
         title: text,
-        subtitle: 'Relation',
+        subtitle: searchKindLabel('relationship'),
         snippet: makeSnippet(matchedText || text, q),
         score,
         path: 'relations',
@@ -138,7 +136,7 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
     let bestLine: { text: string; character: string } | null = null
     let lineScore = 0
     for (const line of s.lines) {
-      const who = line.characterId ? charName(line.characterId) : 'Narrateur'
+      const who = line.characterId ? charName(line.characterId) : tStandalone('dialogues.editor.narrator')
       const { score } = scoreFields(
         [
           { text: line.text, weight: 6 },
@@ -160,8 +158,8 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
       results.push({
         kind: 'dialogue',
         id: s.id,
-        title: s.title || 'Dialogue sans titre',
-        subtitle: `${s.lines.length} réplique(s)${linkedPlot ? ` · 🧩 ${linkedPlot}` : ''}`,
+        title: s.title || tStandalone('search.untitledDialogue'),
+        subtitle: `${tStandalone('dialogues.lines', { n: s.lines.length })}${linkedPlot ? ` · 🧩 ${linkedPlot}` : ''}`,
         snippet,
         score,
         path: `dialogues/${s.id}`,
@@ -181,8 +179,8 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
       results.push({
         kind: 'novel',
         id: n.id,
-        title: n.title || 'Roman sans titre',
-        subtitle: `${count} chapitre(s)`,
+        title: n.title || tStandalone('search.untitledNovel'),
+        subtitle: tStandalone('search.chaptersCount', { n: count }),
         snippet: makeSnippet(matchedText || n.title, q),
         score,
         path: `novel?novel=${n.id}`,
@@ -205,8 +203,8 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
       results.push({
         kind: 'chapter',
         id: ch.id,
-        title: ch.title || 'Chapitre sans titre',
-        subtitle: novel ? `Roman · ${novel}` : 'Roman',
+        title: ch.title || tStandalone('search.untitledChapter'),
+        subtitle: novel ? `${tStandalone('search.novelPrefix')} · ${novel}` : tStandalone('search.novelPrefix'),
         snippet: makeSnippet(matchedText || plain, q),
         score,
         path: `novel?novel=${ch.novelId ?? ''}`,
@@ -227,8 +225,8 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
       results.push({
         kind: 'wiki',
         id: w.id,
-        title: w.title || 'Entrée sans titre',
-        subtitle: 'Wiki',
+        title: w.title || tStandalone('search.untitledWikiEntry'),
+        subtitle: searchKindLabel('wiki'),
         snippet: makeSnippet(matchedText || plain, q),
         score,
         path: `wiki/${w.id}`,
@@ -250,7 +248,7 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
         kind: 'plot',
         id: p.id,
         title: p.title,
-        subtitle: 'Intrigue',
+        subtitle: searchKindLabel('plot'),
         snippet: makeSnippet(matchedText || p.synopsis, q),
         score,
         path: `plots/${p.id}`,

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useI18n } from '../i18n'
 
 export interface ConfirmOptions {
   title?: string
@@ -22,6 +23,7 @@ export function useConfirm(): (opts: ConfirmOptions) => Promise<boolean> {
 }
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n()
   const [state, setState] = useState<ConfirmState | null>(null)
 
   const confirm = useCallback(
@@ -58,17 +60,17 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             if (e.target === e.currentTarget) close(false)
           }}
         >
-          <div className="modal" role="alertdialog" aria-modal="true" aria-label={state.title ?? 'Confirmation'}>
-            <h2>{state.title ?? 'Confirmer'}</h2>
+          <div className="modal" role="alertdialog" aria-modal="true" aria-label={state.title ?? t('confirm.aria')}>
+            <h2>{state.title ?? t('confirm.title')}</h2>
             <p className="muted" style={{ whiteSpace: 'pre-line' }}>
               {state.message}
             </p>
             <div className="btn-row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
               <button type="button" className="btn" onClick={() => close(false)} autoFocus>
-                {state.cancelLabel ?? 'Annuler'}
+                {state.cancelLabel ?? t('confirm.cancel')}
               </button>
               <button type="button" className="btn btn-danger" onClick={() => close(true)}>
-                {state.confirmLabel ?? 'Supprimer'}
+                {state.confirmLabel ?? t('confirm.confirm')}
               </button>
             </div>
           </div>

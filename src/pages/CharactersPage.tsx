@@ -7,8 +7,10 @@ import { CharacterAvatar } from '../components/CharacterAvatar'
 import { characterDisplayName } from '../types'
 import { computeAge } from '../lib/age'
 import { normalizeForSearch } from '../lib/text'
+import { useI18n } from '../i18n'
 
 export default function CharactersPage() {
+  const { t, dateLocale } = useI18n()
   const projectId = useProjectId()
   const characters = useLiveQuery(
     () => db.characters.where('projectId').equals(projectId).toArray(),
@@ -18,7 +20,7 @@ export default function CharactersPage() {
 
   const sorted = useMemo(() => {
     const list = (characters ?? []).slice()
-    list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), 'fr'))
+    list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), dateLocale))
     const q = normalizeForSearch(filter).text
     if (!q) return list
     return list.filter((c) =>
@@ -31,24 +33,24 @@ export default function CharactersPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <h1 style={{ margin: 0, flex: '0 0 auto' }}>Personnages</h1>
+        <h1 style={{ margin: 0, flex: '0 0 auto' }}>{t('characters.title')}</h1>
         <input
           className="search-input"
           type="text"
-          placeholder="Filtrer par nom, surnom, tag, rôle…"
+          placeholder={t('characters.filterPlaceholder')}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
         <Link className="btn btn-primary" to={`/projects/${projectId}/characters/new`}>
-          + Nouveau personnage
+          {t('characters.new')}
         </Link>
       </div>
 
       {sorted.length === 0 ? (
         <p className="muted">
           {characters && characters.length > 0
-            ? 'Aucun personnage ne correspond au filtre.'
-            : 'Aucun personnage pour l\'instant. Créez le premier !'}
+            ? t('characters.emptyFiltered')
+            : t('characters.empty')}
         </p>
       ) : (
         <div className="character-list">
@@ -61,7 +63,7 @@ export default function CharactersPage() {
                   <span className="name">{characterDisplayName(c)}</span>
                   {c.nickname && <span className="sub"> « {c.nickname} »</span>}
                   {c.role && <span className="sub"> · {c.role}</span>}
-                  {age !== null && <span className="sub"> · {age} an{age > 1 ? 's' : ''}</span>}
+                  {age !== null && <span className="sub"> · {t('common.ageYears', { age, s: age > 1 ? 's' : '' })}</span>}
                   <br />
                   <span className="sub">{c.tags.join(' · ')}</span>
                 </span>

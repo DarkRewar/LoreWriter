@@ -15,10 +15,12 @@ import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 import { saveFileNative } from '../lib/desktop'
 import { downloadRemoteProject, listRemoteProjects, loadCloudConfig, type RemoteProjectInfo } from '../lib/cloud'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useI18n } from '../i18n'
 
 function ProjectCard({ project }: { project: Project }) {
   const confirm = useConfirm()
   const navigate = useNavigate()
+  const { t, dateLocale } = useI18n()
   const counts = useLiveQuery(async () => {
     const pid = project.id
     const [characters, relationships, dialogueScenes, chapters, plots] = await Promise.all([
@@ -35,7 +37,7 @@ function ProjectCard({ project }: { project: Project }) {
     const bytes = await exportProjectLore(project.id)
     const filename = `${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`
     try {
-      const res = await saveFileNative(filename, bytes, 'Projet LoreWriter (.lore)', ['lore'])
+      const res = await saveFileNative(filename, bytes, t('projects.exportFilter'), ['lore'])
       if (res !== 'unsupported') return
     } catch {
       // retombe sur le téléchargement navigateur
@@ -49,7 +51,7 @@ function ProjectCard({ project }: { project: Project }) {
   }
 
   const onDelete = async () => {
-    if (await confirm({ title: 'Supprimer le projet', message: `Supprimer définitivement le projet « ${project.name} » et tout son contenu ?` })) {
+    if (await confirm({ title: t('projects.deleteTitle'), message: t('projects.deleteMessage', { name: project.name }) })) {
       await deleteProject(project.id)
     }
   }
@@ -62,23 +64,29 @@ function ProjectCard({ project }: { project: Project }) {
       {project.description && <p className="muted">{project.description}</p>}
       <div className="counts">
         {counts
-          ? `${counts.characters} personnage(s) · ${counts.relationships} relation(s) · ${counts.dialogueScenes} dialogue(s) · ${counts.chapters} chapitre(s) · ${counts.plots} intrigue(s)`
+          ? t('projects.counts', {
+              characters: counts.characters,
+              relationships: counts.relationships,
+              dialogues: counts.dialogueScenes,
+              chapters: counts.chapters,
+              plots: counts.plots,
+            })
           : '…'}
         <br />
-        modifié le {new Date(project.updatedAt).toLocaleString('fr-FR')}
+        {t('projects.modified', { date: new Date(project.updatedAt).toLocaleString(dateLocale) })}
       </div>
       <div className="card-actions">
         <Link className="btn btn-primary" to={`/projects/${project.id}`}>
-          Ouvrir
+          {t('projects.open')}
         </Link>
         <button type="button" className="btn" onClick={onDuplicate}>
-          Dupliquer
+          {t('projects.duplicate')}
         </button>
         <button type="button" className="btn" onClick={onExport}>
-          Exporter (.lore)
+          {t('projects.export')}
         </button>
         <button type="button" className="btn btn-danger" onClick={onDelete}>
-          Supprimer
+          {t('projects.delete')}
         </button>
       </div>
     </div>
@@ -94,6 +102,7 @@ export default function ProjectsPage() {
   const [remoteError, setRemoteError] = useState('')
   const [downloading, setDownloading] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { t, dateLocale } = useI18n()
 
   const localIds = useMemo(() => new Set((projects ?? []).map((p) => p.id)), [projects])
   const cloudOn = useMemo(() => loadCloudConfig()?.enabled === true, [])
@@ -108,7 +117,7 @@ export default function ProjectsPage() {
         if (!cancelled) setRemote(r)
       })
       .catch((err) => {
-        if (!cancelled) setRemoteError(err instanceof Error ? err.message : 'Listage distant impossible.')
+        if (!cancelled) setRemoteError(err instanceof Error ? err.message : t('projects.remoteListError'))
       })
     return () => {
       cancelled = true
@@ -122,7 +131,7 @@ export default function ProjectsPage() {
       const pid = await downloadRemoteProject(id)
       navigate(`/projects/${pid}`)
     } catch (err) {
-      setRemoteError(err instanceof Error ? err.message : 'Téléchargement impossible.')
+      setRemoteError(err instanceof Error ? err.message : t('projects.remoteDownloadError'))
       setDownloading(null)
     }
   }
@@ -130,7 +139,7 @@ export default function ProjectsPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!name.trim()) {
-      setError('Donne un nom au projet.')
+      setError(t('projects.nameRequired'))
       return
     }
     const id = await createProject(name.trim(), description.trim())
@@ -142,36 +151,36 @@ export default function ProjectsPage() {
     if (!file) return
     try {
       const buf = new Uint8Array(await file.arrayBuffer())
-      if (!looksLikeLoreFile(file.name, buf)) throw new Error('Sélectionnez un fichier .lore (archive du projet).')
+      if (!looksLikeLoreFile(file.name, buf)) throw new Error(t('projects.importBadFile'))
       const id = await importProjectLore(buf)
       navigate(`/projects/${id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import impossible.')
+      setError(err instanceof Error ? err.message : t('projects.importError'))
     }
     e.target.value = ''
   }
 
   return (
     <div className="page">
-      <h1>Mes projets d'histoire</h1>
+      <h1>{t('projects.title')}</h1>
       <div className="panel">
-        <h2>Nouveau projet</h2>
+        <h2>{t('projects.newProject')}</h2>
         <form onSubmit={submit}>
           <label className="field">
-            <span>Nom du projet</span>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. : Les Ombres de Valombre" autoFocus />
+            <span>{t('projects.nameLabel')}</span>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('projects.namePlaceholder')} autoFocus />
           </label>
           <label className="field">
-            <span>Description (optionnelle)</span>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Genre, synopsis rapide…" />
+            <span>{t('projects.descLabel')}</span>
+            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('projects.descPlaceholder')} />
           </label>
           {error && <p className="form-error">{error}</p>}
           <div className="btn-row">
             <button type="submit" className="btn btn-primary">
-              Créer le projet
+              {t('projects.create')}
             </button>
             <label className="btn">
-              Importer un projet (.lore)
+              {t('projects.import')}
               <input type="file" accept=".lore,application/zip" hidden onChange={onImport} />
             </label>
           </div>
@@ -185,30 +194,30 @@ export default function ProjectsPage() {
           ))}
         </div>
       ) : (
-        !remoteOnly.length && <p className="muted">Aucun projet pour l'instant — créez votre premier univers ci-dessus. ✨</p>
+        !remoteOnly.length && <p className="muted">{t('projects.empty')}</p>
       )}
 
       {cloudOn && (
         <div className="panel" style={{ marginTop: 24 }}>
-          <h2>☁️ Projets sur le cloud</h2>
+          <h2>{t('projects.cloudSection')}</h2>
           {remoteError && <p className="form-error">{remoteError}</p>}
           {remote === null && !remoteError ? (
-            <p className="muted">Recherche de projets distants…</p>
+            <p className="muted">{t('projects.remoteSearching')}</p>
           ) : remoteOnly.length === 0 ? (
             <p className="muted">
               {remote && remote.length > 0
-                ? 'Tous les projets du cloud sont déjà présents ici.'
-                : 'Aucun projet distant pour l’instant — configurez la synchro dans '}
-              {remote && remote.length === 0 && <Link to="/cloud">☁️ Cloud</Link>}
+                ? t('projects.remoteAllHere')
+                : t('projects.remoteNone')}
+              {remote && remote.length === 0 && <Link to="/cloud">{t('app.cloud')}</Link>}
             </p>
           ) : (
             <>
-              <p className="muted">Présents sur votre serveur WebDAV mais pas encore sur cet appareil :</p>
+              <p className="muted">{t('projects.remoteHint')}</p>
               <div className="projects-grid">
                 {remoteOnly.map((r) => (
                   <div className="project-card" key={r.id}>
                     <h3>☁️ {r.name}</h3>
-                    <div className="counts">modifié le {new Date(r.updatedAt).toLocaleString('fr-FR')}</div>
+                    <div className="counts">{t('projects.modified', { date: new Date(r.updatedAt).toLocaleString(dateLocale) })}</div>
                     <div className="card-actions">
                       <button
                         type="button"
@@ -216,7 +225,7 @@ export default function ProjectsPage() {
                         disabled={downloading !== null}
                         onClick={() => void onDownloadRemote(r.id)}
                       >
-                        {downloading === r.id ? 'Téléchargement…' : '⬇️ Télécharger'}
+                        {downloading === r.id ? t('projects.downloading') : t('projects.download')}
                       </button>
                     </div>
                   </div>

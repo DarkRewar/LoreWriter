@@ -1,4 +1,5 @@
 import type { Relationship, RelationshipType } from '../types'
+import { tStandalone, type MessageKey } from '../i18n'
 
 export interface RelationshipTypeInfo {
   value: RelationshipType
@@ -7,28 +8,33 @@ export interface RelationshipTypeInfo {
   inverse: RelationshipType
 }
 
-export const RELATIONSHIP_TYPES: RelationshipTypeInfo[] = [
-  { value: 'parent', label: 'parent de', color: '#8f4a1d', inverse: 'child' },
-  { value: 'child', label: 'enfant de', color: '#8f4a1d', inverse: 'parent' },
-  { value: 'sibling', label: 'fratrie avec', color: '#d9930d', inverse: 'sibling' },
-  { value: 'spouse', label: 'conjoint·e de', color: '#d1345b', inverse: 'spouse' },
-  { value: 'partner', label: 'partenaire de', color: '#d1345b', inverse: 'partner' },
-  { value: 'family', label: 'famille avec', color: '#9b4d78', inverse: 'family' },
-  { value: 'friend', label: 'ami·e avec', color: '#3f9d63', inverse: 'friend' },
-  { value: 'ally', label: 'allié·e avec', color: '#2f8f83', inverse: 'ally' },
-  { value: 'acquaintance', label: 'connaissance de', color: '#8d7d68', inverse: 'acquaintance' },
-  { value: 'colleague', label: 'collègue avec', color: '#e07b39', inverse: 'colleague' },
-  { value: 'mentor', label: 'mentor de', color: '#6b8e23', inverse: 'student' },
-  { value: 'student', label: 'élève de', color: '#6b8e23', inverse: 'mentor' },
-  { value: 'rival', label: 'rival·e de', color: '#cd5c5c', inverse: 'rival' },
-  { value: 'enemy', label: 'ennemi·e de', color: '#a52a2a', inverse: 'enemy' },
-  { value: 'other', label: 'autre relation avec', color: '#8d7d68', inverse: 'other' },
+/** Définitions des types de lien (label traduit à l'appel via i18n — le type lui-même reste en anglais). */
+const TYPE_DEFS: Array<Omit<RelationshipTypeInfo, 'label'>> = [
+  { value: 'parent', color: '#8f4a1d', inverse: 'child' },
+  { value: 'child', color: '#8f4a1d', inverse: 'parent' },
+  { value: 'sibling', color: '#d9930d', inverse: 'sibling' },
+  { value: 'spouse', color: '#d1345b', inverse: 'spouse' },
+  { value: 'partner', color: '#d1345b', inverse: 'partner' },
+  { value: 'family', color: '#9b4d78', inverse: 'family' },
+  { value: 'friend', color: '#3f9d63', inverse: 'friend' },
+  { value: 'ally', color: '#2f8f83', inverse: 'ally' },
+  { value: 'acquaintance', color: '#8d7d68', inverse: 'acquaintance' },
+  { value: 'colleague', color: '#e07b39', inverse: 'colleague' },
+  { value: 'mentor', color: '#6b8e23', inverse: 'student' },
+  { value: 'student', color: '#6b8e23', inverse: 'mentor' },
+  { value: 'rival', color: '#cd5c5c', inverse: 'rival' },
+  { value: 'enemy', color: '#a52a2a', inverse: 'enemy' },
+  { value: 'other', color: '#8d7d68', inverse: 'other' },
 ]
 
-const FALLBACK = RELATIONSHIP_TYPES[RELATIONSHIP_TYPES.length - 1]
+export const RELATIONSHIP_TYPE_VALUES: RelationshipType[] = TYPE_DEFS.map((d) => d.value)
 
+const FALLBACK = TYPE_DEFS[TYPE_DEFS.length - 1]
+
+/** Infos d'un type de lien, avec le label traduit dans la langue active de l'interface. */
 export function relationshipTypeInfo(t: RelationshipType): RelationshipTypeInfo {
-  return RELATIONSHIP_TYPES.find((r) => r.value === t) ?? FALLBACK
+  const def = TYPE_DEFS.find((d) => d.value === t) ?? FALLBACK
+  return { ...def, label: tStandalone(`relations.types.${def.value}` as MessageKey) }
 }
 
 /** Vrai si la relation existe déjà (même paire non ordonnée + même type). */

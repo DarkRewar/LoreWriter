@@ -6,9 +6,11 @@ import { useProjectId } from '../hooks'
 import { newId } from '../lib/ids'
 import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
+import { useI18n } from '../i18n'
 
 export default function DialoguesPage() {
   const confirm = useConfirm()
+  const { t, dateLocale } = useI18n()
   const projectId = useProjectId()
   const navigate = useNavigate()
   const scenes = useLiveQuery(
@@ -41,7 +43,7 @@ export default function DialoguesPage() {
   }
 
   const remove = async (id: string, name: string) => {
-    if (await confirm({ message: `Supprimer la scène « ${name} » ?` })) {
+    if (await confirm({ message: t('dialogues.deleteConfirm', { name }) })) {
       await addTombstone(projectId, 'dialogue', id)
       await db.dialogueScenes.delete(id)
       await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -51,33 +53,33 @@ export default function DialoguesPage() {
   const plotTitle = (plotId: string): string | null => {
     if (!plotId) return null
     const p = plots?.find((x) => x.id === plotId)
-    return p ? p.title || 'Sans titre' : null
+    return p ? p.title || t('dialogues.untitled') : null
   }
 
   return (
     <div className="page">
       <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Dialogues</h1>
+        <h1 style={{ margin: 0 }}>{t('dialogues.title')}</h1>
       </div>
 
       <div className="panel">
-        <h2>Nouvelle scène de dialogue</h2>
+        <h2>{t('dialogues.newScene')}</h2>
         <form onSubmit={create} className="btn-row">
           <input
             type="text"
-            placeholder="Titre de la scène (ex. : L'embuscade)"
+            placeholder={t('dialogues.sceneTitlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{ flex: 1, minWidth: 240 }}
           />
           <button type="submit" className="btn btn-primary">
-            Créer
+            {t('dialogues.create')}
           </button>
         </form>
       </div>
 
       {!scenes || scenes.length === 0 ? (
-        <p className="muted">Aucune scène de dialogue pour l'instant.</p>
+        <p className="muted">{t('dialogues.none')}</p>
       ) : (
         <div className="character-list">
           {scenes
@@ -87,16 +89,15 @@ export default function DialoguesPage() {
               <div key={s.id} className="character-row">
                 <span className="who">
                   <Link className="name" to={`/projects/${projectId}/dialogues/${s.id}`}>
-                    💬 {s.title || 'Sans titre'}
+                    💬 {s.title || t('dialogues.untitled')}
                   </Link>
                   <br />
                   <span className="sub">
-                    {s.lines.length} réplique(s)
-                    {plotTitle(s.plotId) ? ` · 🧩 ${plotTitle(s.plotId)}` : ''} · modifiée le{' '}
-                    {new Date(s.updatedAt).toLocaleString('fr-FR')}
+                    {t('dialogues.lines', { n: s.lines.length })}
+                    {plotTitle(s.plotId) ? ` · 🧩 ${plotTitle(s.plotId)}` : ''} · {t('dialogues.modified', { date: new Date(s.updatedAt).toLocaleString(dateLocale) })}
                   </span>
                 </span>
-                <button type="button" className="btn-icon" aria-label="Supprimer la scène" onClick={() => void remove(s.id, s.title)}>
+                <button type="button" className="btn-icon" aria-label={t('dialogues.deleteAria')} onClick={() => void remove(s.id, s.title)}>
                   🗑
                 </button>
               </div>

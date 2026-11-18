@@ -4,8 +4,10 @@ import { db } from '../db'
 import { useProject, useProjectId } from '../hooks'
 import { CharacterAvatar } from '../components/CharacterAvatar'
 import { characterDisplayName } from '../types'
+import { useI18n } from '../i18n'
 
 export default function DashboardPage() {
+  const { t } = useI18n()
   const projectId = useProjectId()
   const project = useProject()
   const stats = useLiveQuery(async () => {
@@ -33,38 +35,38 @@ export default function DashboardPage() {
 
       <div className="projects-grid">
         <Link className="project-card" to={`${base}/characters`}>
-          <h3>👥 Personnages</h3>
+          <h3>{t('dashboard.characters')}</h3>
           <div className="counts">{stats?.characters ?? '…'}</div>
         </Link>
         <Link className="project-card" to={`${base}/relations`}>
-          <h3>🕸️ Relations</h3>
+          <h3>{t('dashboard.relations')}</h3>
           <div className="counts">{stats?.relationships ?? '…'}</div>
         </Link>
         <Link className="project-card" to={`${base}/wiki`}>
-          <h3>📚 Wiki</h3>
-          <div className="counts">{stats?.wiki ?? '…'} entrée(s)</div>
+          <h3>{t('dashboard.wiki')}</h3>
+          <div className="counts">{t('dashboard.wikiCount', { n: stats?.wiki ?? '…' })}</div>
         </Link>
         <Link className="project-card" to={`${base}/plots`}>
-          <h3>🧩 Intrigues</h3>
+          <h3>{t('dashboard.plots')}</h3>
           <div className="counts">{stats?.plots ?? '…'}</div>
         </Link>
         <Link className="project-card" to={`${base}/dialogues`}>
-          <h3>💬 Dialogues</h3>
-          <div className="counts">{stats?.dialogueScenes ?? '…'} scène(s)</div>
+          <h3>{t('dashboard.dialogues')}</h3>
+          <div className="counts">{t('dashboard.scenes', { n: stats?.dialogueScenes ?? '…' })}</div>
         </Link>
         <Link className="project-card" to={`${base}/novel`}>
-          <h3>📖 Romans</h3>
-          <div className="counts">{stats?.novels ?? '…'} roman(s) · {stats?.chapters ?? '…'} chapitre(s)</div>
+          <h3>{t('dashboard.novels')}</h3>
+          <div className="counts">{t('dashboard.novelsCount', { novels: stats?.novels ?? '…', chapters: stats?.chapters ?? '…' })}</div>
         </Link>
         <Link className="project-card" to={`${base}/search`}>
-          <h3>🔍 Recherche</h3>
-          <div className="counts">personnages, dialogues, chapitres, intrigues…</div>
+          <h3>{t('dashboard.search')}</h3>
+          <div className="counts">{t('dashboard.searchHint')}</div>
         </Link>
       </div>
 
       {stats && stats.recent.length > 0 && (
         <div className="panel" style={{ marginTop: 24 }}>
-          <h2>Derniers personnages modifiés</h2>
+          <h2>{t('dashboard.recent')}</h2>
           <div className="character-list">
             {stats.recent.map((c) => (
               <Link key={c.id} className="character-row" to={`${base}/characters/${c.id}`}>

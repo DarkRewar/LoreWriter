@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
+import { useI18n } from '../i18n'
 
 export function TagInput({
   value,
@@ -9,6 +10,7 @@ export function TagInput({
   onChange: (v: string[]) => void
   placeholder?: string
 }) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState('')
 
   const commit = (raw: string) => {
@@ -31,10 +33,10 @@ export function TagInput({
       className="tag-input"
       onClick={(e) => (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus()}
     >
-      {value.map((t) => (
-        <span key={t} className="tag">
-          {t}
-          <button type="button" aria-label={`Retirer ${t}`} onClick={() => onChange(value.filter((x) => x !== t))}>
+      {value.map((tag) => (
+        <span key={tag} className="tag">
+          {tag}
+          <button type="button" aria-label={t('tag.removeAria', { tag })} onClick={() => onChange(value.filter((x) => x !== tag))}>
             ×
           </button>
         </span>

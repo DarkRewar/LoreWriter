@@ -4,12 +4,14 @@ import { db } from '../db'
 import { useProjectId } from '../hooks'
 import { CharacterAvatar } from '../components/CharacterAvatar'
 import { characterDisplayName } from '../types'
-import { computeAge, formatDateFr } from '../lib/age'
+import { computeAge, formatDate } from '../lib/age'
 import { relationshipTypeInfo } from '../lib/relationships'
 import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
+import { useI18n } from '../i18n'
 
 export default function CharacterDetailPage() {
+  const { t, dateLocale } = useI18n()
   const confirm = useConfirm()
   const projectId = useProjectId()
   const { characterId } = useParams()
@@ -35,8 +37,8 @@ export default function CharacterDetailPage() {
   if (!character) {
     return (
       <div className="page">
-        <p>Personnage introuvable.</p>
-        <Link to={`/projects/${projectId}/characters`}>← Retour à la liste</Link>
+        <p>{t('characters.notFound')}</p>
+        <Link to={`/projects/${projectId}/characters`}>{t('characters.backToList')}</Link>
       </div>
     )
   }
@@ -45,11 +47,11 @@ export default function CharacterDetailPage() {
   const age = character.birthDate ? computeAge(character.birthDate) : character.manualAge
   const charName = (id: string) => {
     const c = allCharacters?.find((x) => x.id === id)
-    return c ? characterDisplayName(c) : 'Personnage supprimé'
+    return c ? characterDisplayName(c) : t('characters.deletedChar')
   }
 
   const onDelete = async () => {
-    if (await confirm({ title: 'Supprimer le personnage', message: `Supprimer ${name} et toutes ses relations ?` })) {
+    if (await confirm({ title: t('characters.deleteTitle'), message: t('characters.deleteMessage', { name }) })) {
       await db.transaction('rw', [db.characters, db.relationships, db.deletions], async () => {
         await addTombstone(projectId, 'character', character.id)
         const rels = await db.relationships
@@ -72,13 +74,13 @@ export default function CharacterDetailPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <Link to={`/projects/${projectId}/characters`}>← Personnages</Link>
+        <Link to={`/projects/${projectId}/characters`}>← {t('characters.title')}</Link>
         <div className="btn-row" style={{ marginLeft: 'auto' }}>
           <Link className="btn btn-primary" to={`/projects/${projectId}/characters/${character.id}/edit`}>
-            Modifier
+            {t('common.edit')}
           </Link>
           <button type="button" className="btn btn-danger" onClick={onDelete}>
-            Supprimer
+            {t('common.delete')}
           </button>
         </div>
       </div>
@@ -98,31 +100,31 @@ export default function CharacterDetailPage() {
 
         <div>
           <div className="panel">
-            <h2>Informations essentielles</h2>
+            <h2>{t('characters.info')}</h2>
             <dl className="kv">
-              <dt>Prénom</dt>
-              <dd>{character.firstName || '—'}</dd>
-              <dt>Nom</dt>
-              <dd>{character.lastName || '—'}</dd>
-              <dt>Surnom</dt>
-              <dd>{character.nickname || '—'}</dd>
-              <dt>Date de naissance</dt>
-              <dd>{character.birthDate ? formatDateFr(character.birthDate) : '—'}</dd>
-              <dt>Âge</dt>
-              <dd>{age !== null ? `${age} an${age > 1 ? 's' : ''}` : '—'}</dd>
-              <dt>Rôle</dt>
-              <dd>{character.role || '—'}</dd>
+              <dt>{t('characters.fields.firstName')}</dt>
+              <dd>{character.firstName || t('common.em')}</dd>
+              <dt>{t('characters.fields.lastName')}</dt>
+              <dd>{character.lastName || t('common.em')}</dd>
+              <dt>{t('characters.fields.nickname')}</dt>
+              <dd>{character.nickname || t('common.em')}</dd>
+              <dt>{t('characters.fields.birthDate')}</dt>
+              <dd>{character.birthDate ? formatDate(character.birthDate, dateLocale) : t('common.em')}</dd>
+              <dt>{t('characters.fields.age')}</dt>
+              <dd>{age !== null ? t('common.ageYears', { age, s: age > 1 ? 's' : '' }) : t('common.em')}</dd>
+              <dt>{t('characters.fields.role')}</dt>
+              <dd>{character.role || t('common.em')}</dd>
             </dl>
           </div>
 
           {character.metadata.length > 0 && (
             <div className="panel">
-              <h2>Métadonnées</h2>
+              <h2>{t('characters.metadata')}</h2>
               <dl className="kv">
                 {character.metadata.map((m) => (
                   <span key={m.id} style={{ display: 'contents' }}>
-                    <dt>{m.key || '—'}</dt>
-                    <dd>{m.value || '—'}</dd>
+                    <dt>{m.key || t('common.em')}</dt>
+                    <dd>{m.value || t('common.em')}</dd>
                   </span>
                 ))}
               </dl>
@@ -131,13 +133,13 @@ export default function CharacterDetailPage() {
 
           {character.description && (
             <div className="panel">
-              <h2>Notes</h2>
+              <h2>{t('characters.notes')}</h2>
               <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{character.description}</p>
             </div>
           )}
 
           <div className="panel">
-            <h2>Relations ({relationships?.length ?? 0})</h2>
+            <h2>{t('characters.relations', { n: relationships?.length ?? 0 })}</h2>
             {relationships && relationships.length > 0 ? (
               <table className="data">
                 <tbody>
@@ -165,8 +167,8 @@ export default function CharacterDetailPage() {
               </table>
             ) : (
               <p className="muted">
-                Aucune relation. <Link to={`/projects/${projectId}/relations`}>Ajouter des liens</Link> avec d'autres
-                personnages.
+                {t('characters.noRelations')}{' '}<Link to={`/projects/${projectId}/relations`}>{t('characters.addLinks')}</Link>{' '}
+                {t('characters.withOthers')}
               </p>
             )}
           </div>

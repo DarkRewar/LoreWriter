@@ -9,6 +9,7 @@ import {
   type CloudConfig,
 } from '../lib/cloud'
 import { isDesktopApp, pickDirectoryNative } from '../lib/desktop'
+import { useI18n } from '../i18n'
 
 const DEFAULT_CONFIG: CloudConfig = {
   provider: 'webdav',
@@ -21,6 +22,7 @@ const DEFAULT_CONFIG: CloudConfig = {
 }
 
 export default function CloudSettingsPage() {
+  const { t } = useI18n()
   const [config, setConfig] = useState<CloudConfig>(() => loadCloudConfig() ?? DEFAULT_CONFIG)
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null)
   const [testing, setTesting] = useState(false)
@@ -31,7 +33,7 @@ export default function CloudSettingsPage() {
   const onSave = (e: FormEvent) => {
     e.preventDefault()
     saveCloudConfig(config)
-    setStatus({ ok: true, message: 'Configuration enregistrée dans ce navigateur.' })
+    setStatus({ ok: true, message: t('cloud.saved') })
   }
 
   const onTest = async () => {
@@ -39,18 +41,18 @@ export default function CloudSettingsPage() {
     setStatus(null)
     try {
       const base = config.baseUrl.replace(/\/+$/, '')
-      if (!base) throw new Error('Renseigne l\'URL de base WebDAV.')
+      if (!base) throw new Error(t('cloud.urlRequired'))
       const res = await fetch(`${base}/`, {
         method: 'PROPFIND',
         headers: { Authorization: `Basic ${b64encodeUnicode(`${config.username}:${config.password}`)}`, Depth: '0' },
       })
       if (res.ok || res.status === 207) {
-        setStatus({ ok: true, message: `Connexion réussie (HTTP ${res.status}). La synchro est prête.` })
+        setStatus({ ok: true, message: t('cloud.testOk', { status: res.status }) })
       } else {
-        setStatus({ ok: false, message: `Échec de la connexion (HTTP ${res.status}). Vérifie l'URL et les identifiants.` })
+        setStatus({ ok: false, message: t('cloud.testFail', { status: res.status }) })
       }
     } catch {
-      setStatus({ ok: false, message: 'Connexion impossible — vérifie que le serveur est joignable depuis ce navigateur.' })
+      setStatus({ ok: false, message: t('cloud.testUnreachable') })
     } finally {
       setTesting(false)
     }
@@ -59,7 +61,7 @@ export default function CloudSettingsPage() {
   const onClear = () => {
     clearCloudConfig()
     setConfig(DEFAULT_CONFIG)
-    setStatus({ ok: true, message: 'Configuration cloud supprimée.' })
+    setStatus({ ok: true, message: t('cloud.cleared') })
   }
 
   const onPickBackupDir = async () => {
@@ -69,88 +71,80 @@ export default function CloudSettingsPage() {
 
   return (
     <div className="page">
-      <h1>☁️ Synchronisation cloud</h1>
+      <h1>{t('cloud.title')}</h1>
       <p className="muted">
-        LoreWriter fonctionne d'abord <strong>hors ligne</strong> : toutes vos données vivent dans ce navigateur
-        (IndexedDB). La synchro cloud envoie ensuite chaque projet en <strong>plusieurs fichiers</strong> vers{' '}
-        <strong>votre propre cloud</strong> via WebDAV — par exemple une instance Nextcloud/ownCloud.
-      </p>
+        {t('cloud.intro')}</p>
 
       <div className="note">
-        🔒 Vos identifiants sont stockés uniquement dans le stockage local de ce navigateur et ne sont envoyés qu'à
-        l'URL de votre serveur. Utilisez de préférence un <em>mot de passe d'application</em> (Nextcloud : Paramètres →
-        Sécurité → Appareils et sessions).
-      </div>
+        {t('cloud.securityNote')}</div>
 
       <form onSubmit={onSave} style={{ maxWidth: 640 }}>
         <div className="panel">
-          <h2>Serveur WebDAV</h2>
+          <h2>{t('cloud.server')}</h2>
           <label className="field">
-            <span>URL de base WebDAV</span>
+            <span>{t('cloud.baseUrl')}</span>
             <input
               type="url"
               value={config.baseUrl}
               onChange={(e) => set('baseUrl', e.target.value)}
-              placeholder="https://cloud.example.com/remote.php/dav/files/VOTRE_NOM"
+              placeholder={t('cloud.baseUrlPlaceholder')}
             />
           </label>
           <label className="field">
-            <span>Identifiant</span>
-            <input type="text" value={config.username} onChange={(e) => set('username', e.target.value)} placeholder="alice" />
+            <span>{t('cloud.username')}</span>
+            <input type="text" value={config.username} onChange={(e) => set('username', e.target.value)} placeholder={t('cloud.usernamePlaceholder')} />
           </label>
           <label className="field">
-            <span>Mot de passe (ou mot de passe d'application)</span>
-            <input type="password" value={config.password} onChange={(e) => set('password', e.target.value)} placeholder="••••••••" autoComplete="off" />
+            <span>{t('cloud.password')}</span>
+            <input type="password" value={config.password} onChange={(e) => set('password', e.target.value)} placeholder={t('cloud.passwordPlaceholder')} autoComplete="off" />
           </label>
           <label className="field">
-            <span>Dossier distant</span>
+            <span>{t('cloud.folder')}</span>
             <input type="text" value={config.folder} onChange={(e) => set('folder', e.target.value)} placeholder="LoreWriter" />
           </label>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input type="checkbox" checked={config.enabled} onChange={(e) => set('enabled', e.target.checked)} style={{ width: 'auto' }} />
-            <span>Activer la synchronisation automatique (au démarrage et toutes les 60 s)</span>
+            <span>{t('cloud.enabled')}</span>
           </label>
         </div>
 
         <div className="panel">
-          <h2>Sauvegardes .lore automatiques</h2>
+          <h2>{t('cloud.backupTitle')}</h2>
           <label className="field">
-            <span>Fréquence (après chaque synchro réussie)</span>
+            <span>{t('cloud.backupFreq')}</span>
             <select
               value={config.backupMode ?? 'off'}
               onChange={(e) => set('backupMode', e.target.value as BackupMode)}
             >
-              <option value="off">Désactivées</option>
-              <option value="each-sync">À chaque synchro</option>
-              <option value="daily">Une fois par jour</option>
+              <option value="off">{t('cloud.backupOff')}</option>
+              <option value="each-sync">{t('cloud.backupEachSync')}</option>
+              <option value="daily">{t('cloud.backupDaily')}</option>
             </select>
           </label>
           {(config.backupMode ?? 'off') !== 'off' &&
             (isDesktopApp() ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <button type="button" className="btn" onClick={() => void onPickBackupDir()}>
-                  {config.backupDir ? 'Changer le dossier…' : 'Choisir le dossier de sauvegarde…'}
+                  {config.backupDir ? t('cloud.changeDir') : t('cloud.chooseDir')}
                 </button>
                 <span className="muted">
-                  {config.backupDir ?? 'Aucun dossier choisi : boîte de dialogue à chaque sauvegarde.'}
+                  {config.backupDir ?? t('cloud.noDir')}
                 </span>
               </div>
             ) : (
-              <p className="muted">
-                Dans le navigateur, chaque sauvegarde <code>.lore</code> est téléchargée (dossier Téléchargements).
-              </p>
+              <p className="muted">{t('cloud.browserNote')}</p>
             ))}
         </div>
 
         <div className="btn-row">
           <button type="submit" className="btn btn-primary">
-            Enregistrer
+            {t('cloud.save')}
           </button>
           <button type="button" className="btn" onClick={onTest} disabled={testing}>
-            {testing ? 'Test en cours…' : 'Tester la connexion'}
+            {testing ? t('cloud.testing') : t('cloud.test')}
           </button>
           <button type="button" className="btn btn-danger" onClick={onClear}>
-            Effacer la configuration
+            {t('cloud.clear')}
           </button>
         </div>
         {status && (
@@ -161,22 +155,12 @@ export default function CloudSettingsPage() {
       </form>
 
       <div className="panel" style={{ maxWidth: 640, marginTop: 20 }}>
-        <h2>Comment ça marche ?</h2>
+        <h2>{t('cloud.howTitle')}</h2>
         <p className="muted">
-          Chaque projet est enregistré dans <code>{'/<dossier>/lorewriter/<id-projet>/'}</code> de votre cloud, en
-          plusieurs fichiers : <code>project.json</code> (fichier de base : projet, personnages, relations, intrigues),{' '}
-          <code>chapters/&lt;id&gt;.md</code> (un fichier Markdown dédié par chapitre) et{' '}
-          <code>dialogues/&lt;id&gt;.json</code> (un fichier par scène de dialogue). À l'ouverture d'un projet,
-          LoreWriter télécharge la version distante, fusionne entité par entité (la modification la plus récente
-          gagne), puis renvoie le résultat. Ouvrez LoreWriter sur un autre appareil configuré avec le même cloud :
-          vos projets se retrouvent automatiquement. Un ancien fichier unique <code>&lt;id-projet&gt;.json</code>{' '}
-          est automatiquement migré vers ce format multi-fichiers.
-        </p>
+          {t('cloud.howText1')}</p>
         <p className="muted">
-          Astuce : pour héberger LoreWriter « de n'importe où », servez le dossier <code>dist/</code> (voir README)
-          avec Docker/nginx sur votre serveur, ou utilisez l'application installée (PWA) hors ligne.
-        </p>
-        <Link to="/">← Retour aux projets</Link>
+          {t('cloud.howText2')}</p>
+        <Link to="/">{t('cloud.back')}</Link>
       </div>
     </div>
   )

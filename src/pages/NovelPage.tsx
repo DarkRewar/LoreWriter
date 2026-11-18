@@ -11,9 +11,11 @@ import { downloadFile } from '../lib/queries'
 import type { Chapter, Novel } from '../types'
 import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
+import { useI18n } from '../i18n'
 
 export default function NovelPage() {
   const confirm = useConfirm()
+  const { t } = useI18n()
   const projectId = useProjectId()
   const mentionItems = useMentionItems()
   const [searchParams] = useSearchParams()
@@ -116,7 +118,7 @@ export default function NovelPage() {
       id,
       projectId,
       novelId: selectedNovel.id,
-      title: `Chapitre ${order + 1}`,
+      title: t('novels.chapterDefault', { n: order + 1 }),
       content: '',
       order,
       createdAt: now,
@@ -127,7 +129,7 @@ export default function NovelPage() {
   }
 
   const removeChapter = async (id: string) => {
-    if (!(await confirm({ message: 'Supprimer ce chapitre ?' }))) return
+    if (!(await confirm({ message: t('novels.deleteChapterConfirm') }))) return
     await addTombstone(projectId, 'chapter', id)
     await db.chapters.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -135,7 +137,7 @@ export default function NovelPage() {
   }
 
   const downloadChapter = (c: Chapter) => {
-    const base = (c.title || 'chapitre').replace(/[^\w-]+/g, '_')
+    const base = (c.title || t('novels.downloadBase')).replace(/[^\w-]+/g, '_')
     downloadFile(`${base}.md`, serializeChapterFile(c), 'text/markdown;charset=utf-8')
   }
 
@@ -152,15 +154,15 @@ export default function NovelPage() {
   }
 
   const renameNovel = async (n: Novel) => {
-    const t = window.prompt('Nouveau titre du roman :', n.title)
-    if (!t || !t.trim() || t.trim() === n.title) return
-    await db.novels.update(n.id, { title: t.trim(), updatedAt: Date.now() })
+    const title = window.prompt(t('novels.renamePrompt'), n.title)
+    if (!title || !title.trim() || title.trim() === n.title) return
+    await db.novels.update(n.id, { title: title.trim(), updatedAt: Date.now() })
     await db.projects.update(projectId, { updatedAt: Date.now() })
   }
 
   const removeNovel = async (n: Novel) => {
     const count = chaptersCount(n.id)
-    if (!(await confirm({ title: 'Supprimer le roman', message: `Supprimer le roman « ${n.title} » et ses ${count} chapitre(s) ?` }))) return
+    if (!(await confirm({ title: t('novels.deleteNovelTitle'), message: t('novels.deleteNovelConfirm', { title: n.title, count }) }))) return
     await db.transaction('rw', [db.novels, db.chapters], async () => {
       await addTombstone(projectId, 'novel', n.id)
       const chIds = (allChapters ?? []).filter((c) => c.novelId === n.id).map((c) => c.id)
@@ -179,17 +181,21 @@ export default function NovelPage() {
   return (
     <div className="page novel-page">
       <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Romans</h1>
+        <h1 style={{ margin: 0 }}>{t('novels.title')}</h1>
         <span className="muted">
-          {novels?.length ?? 0} roman{novels && novels.length > 1 ? 's' : ''} · {chapters?.length ?? 0} chapitre
-          {chapters && chapters.length > 1 ? 's' : ''}
+          {t('novels.count', {
+            novels: novels?.length ?? 0,
+            sNovels: novels && novels.length > 1 ? 's' : '',
+            chapters: chapters?.length ?? 0,
+            sChapters: chapters && chapters.length > 1 ? 's' : '',
+          })}
         </span>
         <div className="btn-row" style={{ marginLeft: 'auto' }}>
-          <button type="button" className="btn" onClick={() => setFocus((f) => !f)} title="Masquer la liste pour écrire en plein écran">
-            {focus ? '📖 Voir la liste' : '✍️ Mode écriture'}
+          <button type="button" className="btn" onClick={() => setFocus((f) => !f)} title={t('novels.focusHide')}>
+            {focus ? t('novels.showList') : t('novels.writingMode')}
           </button>
           <button type="button" className="btn btn-primary" onClick={addChapter} disabled={!selectedNovel}>
-            + Nouveau chapitre
+            {t('novels.newChapter')}
           </button>
         </div>
       </div>
@@ -198,11 +204,11 @@ export default function NovelPage() {
         {!focus && (
           <div className="panel">
             <div className="panel-head">
-              <h2 style={{ margin: 0 }}>Romans ({novels?.length ?? 0})</h2>
+              <h2 style={{ margin: 0 }}>{t('novels.panelTitle', { n: novels?.length ?? 0 })}</h2>
               <button
                 type="button"
                 className="btn-icon"
-                title={panelOpen ? 'Replier la liste romans/chapitres' : 'Déplier la liste romans/chapitres'}
+                title={panelOpen ? t('novels.collapse') : t('novels.expand')}
                 aria-expanded={panelOpen}
                 onClick={() => setPanelOpen((o) => !o)}
               >
@@ -212,7 +218,7 @@ export default function NovelPage() {
             {panelOpen && (
             <>
             {!novels || novels.length === 0 ? (
-              <p className="muted">Aucun roman.</p>
+              <p className="muted">{t('novels.none')}</p>
             ) : (
               <div className="chapter-list">
                 {novels.map((n) => (
@@ -221,12 +227,12 @@ export default function NovelPage() {
                     className={`chapter-item${selectedNovel?.id === n.id ? ' active' : ''}`}
                     onClick={() => setSelectedNovelId(n.id)}
                   >
-                    <span className="title">📖 {n.title || 'Sans titre'}</span>
-                    <span className="words">{novelChapters(n.id).length} ch.</span>
+                    <span className="title">📖 {n.title || t('novels.untitled')}</span>
+                    <span className="words">{t('novels.chCount', { n: novelChapters(n.id).length })}</span>
                     <button
                       type="button"
                       className="btn-icon"
-                      title="Renommer le roman"
+                      title={t('novels.renameNovel')}
                       onClick={(e) => {
                         e.stopPropagation()
                         void renameNovel(n)
@@ -237,7 +243,7 @@ export default function NovelPage() {
                     <button
                       type="button"
                       className="btn-icon"
-                      title="Supprimer le roman et ses chapitres"
+                      title={t('novels.deleteNovelAria')}
                       onClick={(e) => {
                         e.stopPropagation()
                         void removeNovel(n)
@@ -252,19 +258,19 @@ export default function NovelPage() {
             <form onSubmit={addNovel} className="btn-row" style={{ marginTop: 10 }}>
               <input
                 type="text"
-                placeholder="Titre du nouveau roman…"
+                placeholder={t('novels.newNovelPlaceholder')}
                 value={newNovelTitle}
                 onChange={(e) => setNewNovelTitle(e.target.value)}
                 style={{ flex: 1, minWidth: 120 }}
               />
               <button type="submit" className="btn">
-                + Roman
+                {t('novels.addNovel')}
               </button>
             </form>
 
-            <h2 style={{ marginTop: 18 }}>Chapitres de « {selectedNovel?.title || '…'} » ({chapters?.length ?? 0})</h2>
+            <h2 style={{ marginTop: 18 }}>{t('novels.chaptersOf', { title: selectedNovel?.title || '…', n: chapters?.length ?? 0 })}</h2>
             {!chapters || chapters.length === 0 ? (
-              <p className="muted">Aucun chapitre dans ce roman.</p>
+              <p className="muted">{t('novels.noChapters')}</p>
             ) : (
               <div className="chapter-list">
                 {chapters.map((c, i) => (
@@ -277,13 +283,13 @@ export default function NovelPage() {
                     }}
                   >
                     <span className="title">
-                      {i + 1}. {c.title || 'Sans titre'}
+                      {i + 1}. {c.title || t('novels.untitled')}
                     </span>
-                    <span className="words">{wordCount(c.content)} mots</span>
+                    <span className="words">{t('novels.words', { n: wordCount(c.content) })}</span>
                     <button
                       type="button"
                       className="btn-icon"
-                      title="Télécharger ce chapitre (.md)"
+                      title={t('novels.downloadChapter')}
                       onClick={(e) => {
                         e.stopPropagation()
                         downloadChapter(c)
@@ -294,7 +300,7 @@ export default function NovelPage() {
                     <button
                       type="button"
                       className="btn-icon"
-                      title="Supprimer le chapitre"
+                      title={t('common.delete')}
                       onClick={(e) => {
                         e.stopPropagation()
                         void removeChapter(c.id)
@@ -318,19 +324,19 @@ export default function NovelPage() {
               className="chapter-title"
               value={title}
               onChange={(e) => onTitle(e.target.value)}
-              placeholder="Titre du chapitre"
+              placeholder={t('novels.chapterTitlePlaceholder')}
             />
             <RichTextEditor
               content={content}
               onUpdate={onContent}
               mentions={mentionItems}
-              placeholder="Écris ce chapitre ici… respire, prends ton temps."
+              placeholder={t('novels.chapterPlaceholder')}
               footer={
                 <>
                   <span>
-                    {wordCount(content)} mot{wordCount(content) > 1 ? 's' : ''}
+                    {t('wiki.editor.words', { n: wordCount(content), s: wordCount(content) > 1 ? 's' : '' })}
                   </span>
-                  <span>✓ enregistré automatiquement</span>
+                  <span>{t('novels.savedAuto')}</span>
                 </>
               }
             />
@@ -338,7 +344,7 @@ export default function NovelPage() {
         ) : (
           <div className="panel">
             <p className="muted">
-              {selectedNovel ? 'Créez un chapitre pour commencer à écrire. ✨' : 'Créez un roman pour commencer. ✨'}
+              {selectedNovel ? t('novels.createChapterFirst') : t('novels.createNovelFirst')}
             </p>
           </div>
         )}

@@ -9,16 +9,18 @@ import { characterDisplayName } from '../types'
 import { TagInput } from '../components/TagInput'
 import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
+import { useI18n, type MessageKey } from '../i18n'
 
-const STATUS_LABELS: Record<PlotStatus, string> = {
-  idea: '💡 Idée',
-  draft: '📝 Brouillon',
-  wip: '🔥 En cours',
-  done: '✅ Terminée',
+const STATUS_KEYS: Record<PlotStatus, MessageKey> = {
+  idea: 'plots.status.idea',
+  draft: 'plots.status.draft',
+  wip: 'plots.status.wip',
+  done: 'plots.status.done',
 }
 
 export default function PlotEditorPage() {
   const confirm = useConfirm()
+  const { t } = useI18n()
   const projectId = useProjectId()
   const { plotId } = useParams()
   const isEdit = Boolean(plotId)
@@ -62,12 +64,12 @@ export default function PlotEditorPage() {
   if (isEdit && existing === null) {
     return (
       <div className="page">
-        <p>Intrigue introuvable.</p>
-        <Link to={`/projects/${projectId}/plots`}>← Retour aux intrigues</Link>
+        <p>{t('plots.editor.plotNotFound')}</p>
+        <Link to={`/projects/${projectId}/plots`}>{t('plots.editor.backToPlots')}</Link>
       </div>
     )
   }
-  if (!draft) return <div className="page">Chargement…</div>
+  if (!draft) return <div className="page">{t('common.loading')}</div>
 
   const save = (next: Plot) => {
     setDraft(next)
@@ -82,7 +84,7 @@ export default function PlotEditorPage() {
   }
 
   const onDelete = async () => {
-    if (await confirm({ message: `Supprimer l'intrigue « ${draft.title || 'sans titre'} » ?` })) {
+    if (await confirm({ message: t('plots.deleteConfirm', { title: draft.title || t('plots.untitled') }) })) {
       await addTombstone(projectId, 'plot', draft.id)
       await db.plots.delete(draft.id)
       navigate(`/projects/${projectId}/plots`)
@@ -92,46 +94,46 @@ export default function PlotEditorPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <Link to={`/projects/${projectId}/plots`}>← Intrigues</Link>
+        <Link to={`/projects/${projectId}/plots`}>{t('plots.editor.back')}</Link>
         {isEdit && (
           <button type="button" className="btn btn-danger" style={{ marginLeft: 'auto' }} onClick={onDelete}>
-            Supprimer
+            {t('plots.editor.delete')}
           </button>
         )}
       </div>
 
-      <h1>{isEdit ? "Modifier l'intrigue" : 'Nouvelle intrigue'}</h1>
+      <h1>{isEdit ? t('plots.editor.editTitle') : t('plots.editor.newTitle')}</h1>
       <div style={{ maxWidth: 760 }}>
         <div className="panel">
           <label className="field">
-            <span>Titre</span>
-            <input type="text" value={draft.title} onChange={(e) => save({ ...draft, title: e.target.value })} placeholder="Ex. : La disparition du sceptre" />
+            <span>{t('plots.editor.titleLabel')}</span>
+            <input type="text" value={draft.title} onChange={(e) => save({ ...draft, title: e.target.value })} placeholder={t('plots.editor.titlePlaceholder')} />
           </label>
           <label className="field">
-            <span>Statut</span>
+            <span>{t('plots.editor.statusLabel')}</span>
             <select value={draft.status} onChange={(e) => save({ ...draft, status: e.target.value as PlotStatus })}>
-              {(Object.keys(STATUS_LABELS) as PlotStatus[]).map((s) => (
+              {(Object.keys(STATUS_KEYS) as PlotStatus[]).map((s) => (
                 <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
+                  {t(STATUS_KEYS[s])}
                 </option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>Synopsis</span>
-            <textarea value={draft.synopsis} onChange={(e) => save({ ...draft, synopsis: e.target.value })} placeholder="Résumé de l'intrigue…" />
+            <span>{t('plots.editor.synopsisLabel')}</span>
+            <textarea value={draft.synopsis} onChange={(e) => save({ ...draft, synopsis: e.target.value })} placeholder={t('plots.editor.synopsisPlaceholder')} />
           </label>
           <label className="field">
-            <span>Tags</span>
-            <TagInput value={draft.tags} onChange={(v) => save({ ...draft, tags: v })} placeholder="Ex. : quête, mystère…" />
+            <span>{t('plots.editor.tagsLabel')}</span>
+            <TagInput value={draft.tags} onChange={(v) => save({ ...draft, tags: v })} placeholder={t('plots.editor.tagsPlaceholder')} />
           </label>
         </div>
 
         <div className="panel">
-          <h2>Personnages impliqués</h2>
+          <h2>{t('plots.editor.charactersLabel')}</h2>
           {!characters || characters.length === 0 ? (
             <p className="muted">
-              Aucun personnage. <Link to={`/projects/${projectId}/characters/new`}>Créez-en un</Link>.
+              {t('plots.editor.noCharacters')} <Link to={`/projects/${projectId}/characters/new`}>{t('plots.editor.createOne')}</Link>.
             </p>
           ) : (
             <div className="check-list">
@@ -150,10 +152,10 @@ export default function PlotEditorPage() {
         </div>
 
         <div className="panel">
-          <h2>Scènes de dialogue liées ({linkedScenes?.length ?? 0})</h2>
+          <h2>{t('plots.editor.linkedScenes', { n: linkedScenes?.length ?? 0 })}</h2>
           {!linkedScenes || linkedScenes.length === 0 ? (
             <p className="muted">
-              Aucune scène de dialogue reliée à cette intrigue — reliez-en une depuis l'éditeur de dialogue.
+              {t('plots.editor.noScenes')}
             </p>
           ) : (
             <div className="character-list">
@@ -164,10 +166,10 @@ export default function PlotEditorPage() {
                   <div key={s.id} className="character-row">
                     <span className="who">
                       <Link className="name" to={`/projects/${projectId}/dialogues/${s.id}`}>
-                        💬 {s.title || 'Sans titre'}
+                        💬 {s.title || t('plots.untitled')}
                       </Link>
                       <br />
-                      <span className="sub">{s.lines.length} réplique(s)</span>
+                      <span className="sub">{t('dialogues.lines', { n: s.lines.length })}</span>
                     </span>
                   </div>
                 ))}

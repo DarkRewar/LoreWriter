@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { searchEntities, type SearchInput } from './search'
+import { setI18nLocale } from '../i18n'
+
+setI18nLocale('fr')
 import type { Character } from '../types'
 
 const char = (over: Partial<Character>): Character => ({

@@ -5,13 +5,15 @@ import { db } from '../db'
 import { useProjectId } from '../hooks'
 import { newId } from '../lib/ids'
 import { characterDisplayName, type RelationshipType } from '../types'
-import { isDuplicateRelationship, RELATIONSHIP_TYPES, relationshipTypeInfo } from '../lib/relationships'
+import { isDuplicateRelationship, RELATIONSHIP_TYPE_VALUES, relationshipTypeInfo } from '../lib/relationships'
+import { useI18n } from '../i18n'
 import { RelationshipGraph } from '../components/RelationshipGraph'
 import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
 
 export default function RelationshipsPage() {
   const confirm = useConfirm()
+  const { t, dateLocale } = useI18n()
   const projectId = useProjectId()
   const [view, setView] = useState<'list' | 'graph'>('list')
 
@@ -21,7 +23,7 @@ export default function RelationshipsPage() {
         .where('projectId')
         .equals(projectId)
         .toArray()
-        .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), 'fr'))),
+        .then((list) => list.sort((a, b) => characterDisplayName(a).localeCompare(characterDisplayName(b), dateLocale))),
     [projectId],
   )
   const relationships = useLiveQuery(
@@ -37,16 +39,16 @@ export default function RelationshipsPage() {
 
   const charName = (id: string) => {
     const c = characters?.find((x) => x.id === id)
-    return c ? characterDisplayName(c) : 'Personnage supprimé'
+    return c ? characterDisplayName(c) : t('characters.deletedChar')
   }
 
   const addRelationship = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!sourceId || !targetId) return setError('Choisis deux personnages.')
-    if (sourceId === targetId) return setError('Un personnage ne peut pas avoir de relation avec lui-même.')
+    if (!sourceId || !targetId) return setError(t('relations.errors.pickTwo'))
+    if (sourceId === targetId) return setError(t('relations.errors.self'))
     if (relationships && isDuplicateRelationship(relationships, sourceId, targetId, type)) {
-      return setError('Cette relation existe déjà entre ces deux personnages.')
+      return setError(t('relations.errors.duplicate'))
     }
     const now = Date.now()
     await db.relationships.add({
@@ -64,7 +66,7 @@ export default function RelationshipsPage() {
   }
 
   const removeRelationship = async (id: string) => {
-    if (!(await confirm({ message: 'Supprimer cette relation ?' }))) return
+    if (!(await confirm({ message: t('relations.deleteConfirm') }))) return
     await addTombstone(projectId, 'relationship', id)
     await db.relationships.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -73,13 +75,13 @@ export default function RelationshipsPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Relations</h1>
+        <h1 style={{ margin: 0 }}>{t('relations.title')}</h1>
         <div className="view-toggle" style={{ marginLeft: 'auto' }}>
           <button type="button" className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>
-            ☰ Liste
+            {t('relations.list')}
           </button>
           <button type="button" className={view === 'graph' ? 'active' : ''} onClick={() => setView('graph')}>
-            🕸️ Diagramme
+            🕸️ {t('relations.graph')}
           </button>
         </div>
       </div>
@@ -91,12 +93,12 @@ export default function RelationshipsPage() {
       ) : (
         <div key="list" className="view-anim">
           <div className="panel">
-            <h2>Ajouter une relation</h2>
+            <h2>{t('relations.add')}</h2>
             <form className="rel-form" onSubmit={addRelationship}>
               <label className="field">
-                <span>Personnage</span>
+                <span>{t('relations.from')}</span>
                 <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
-                  <option value="">— choisir —</option>
+                  <option value="">{t('relations.choose')}</option>
                   {(characters ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
                       {characterDisplayName(c)}
@@ -105,19 +107,22 @@ export default function RelationshipsPage() {
                 </select>
               </label>
               <label className="field">
-                <span>Type de lien</span>
+                <span>{t('relations.type')}</span>
                 <select value={type} onChange={(e) => setType(e.target.value as RelationshipType)}>
-                  {RELATIONSHIP_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
+                  {RELATIONSHIP_TYPE_VALUES.map((v) => {
+                    const info = relationshipTypeInfo(v)
+                    return (
+                      <option key={v} value={v}>
+                        {info.label}
+                      </option>
+                    )
+                  })}
                 </select>
               </label>
               <label className="field">
-                <span>Personnage lié</span>
+                <span>{t('relations.to')}</span>
                 <select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
-                  <option value="">— choisir —</option>
+                  <option value="">{t('relations.choose')}</option>
                   {(characters ?? []).map((c) => (
                     <option key={c.id} value={c.id}>
                       {characterDisplayName(c)}
@@ -126,26 +131,26 @@ export default function RelationshipsPage() {
                 </select>
               </label>
               <label className="field">
-                <span>Précision (optionnel)</span>
-                <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ex. : cousins éloignés" />
+                <span>{t('relations.precision')}</span>
+                <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={t('relations.precisionPlaceholder')} />
               </label>
               <button type="submit" className="btn btn-primary">
-                Ajouter
+                {t('relations.addButton')}
               </button>
             </form>
             {error && <p className="form-error">{error}</p>}
           </div>
 
           <div className="panel">
-            <h2>Toutes les relations ({relationships?.length ?? 0})</h2>
+            <h2>{t('relations.all', { n: relationships?.length ?? 0 })}</h2>
             {!relationships || relationships.length === 0 ? (
-              <p className="muted">Aucune relation pour l'instant.</p>
+              <p className="muted">{t('relations.none')}</p>
             ) : (
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Lien</th>
-                    <th>Type</th>
+                    <th>{t('relations.linkCol')}</th>
+                    <th>{t('relations.typeCol')}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -166,7 +171,7 @@ export default function RelationshipsPage() {
                           </span>
                         </td>
                         <td>
-                          <button type="button" className="btn-icon" aria-label="Supprimer la relation" onClick={() => void removeRelationship(r.id)}>
+                          <button type="button" className="btn-icon" aria-label={t('relations.deleteAria')} onClick={() => void removeRelationship(r.id)}>
                             🗑
                           </button>
                         </td>

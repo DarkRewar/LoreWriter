@@ -7,9 +7,11 @@ import { deleteProject, downloadFile, exportProjectLore, importProjectLore } fro
 import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 import { saveFileNative } from '../lib/desktop'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useI18n } from '../i18n'
 
 export default function ProjectSettingsPage() {
   const confirm = useConfirm()
+  const { t } = useI18n()
   const projectId = useProjectId()
   const project = useProject()
   const navigate = useNavigate()
@@ -36,7 +38,7 @@ export default function ProjectSettingsPage() {
     e.preventDefault()
     if (!name?.trim()) return
     await db.projects.update(projectId, { name: name.trim(), description: description ?? '', updatedAt: Date.now() })
-    setMessage('Projet renommé.')
+    setMessage(t('projectSettings.renamed'))
     setName(null)
   }
 
@@ -44,14 +46,14 @@ export default function ProjectSettingsPage() {
     const bytes = await exportProjectLore(projectId)
     const filename = `${project.name.replace(/[^\w-]+/g, '_')}${LORE_EXTENSION}`
     try {
-      const res = await saveFileNative(filename, bytes, 'Projet LoreWriter (.lore)', ['lore'])
+      const res = await saveFileNative(filename, bytes, t('projectSettings.exportFilter'), ['lore'])
       if (res === 'saved') {
-        setMessage(`Projet exporté : ${filename}`)
+        setMessage(t('projectSettings.exported', { filename }))
         return
       }
       if (res === 'cancelled') return
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Export impossible.")
+      setMessage(err instanceof Error ? err.message : t('projectSettings.exportError'))
       return
     }
     downloadFile(filename, bytes, LORE_MIME)
@@ -62,18 +64,18 @@ export default function ProjectSettingsPage() {
     if (!file) return
     try {
       const buf = new Uint8Array(await file.arrayBuffer())
-      if (!looksLikeLoreFile(file.name, buf)) throw new Error('Sélectionnez un fichier .lore (archive du projet).')
+      if (!looksLikeLoreFile(file.name, buf)) throw new Error(t('projectSettings.importBadFile'))
       const id = await importProjectLore(buf)
-      setMessage('Projet importé avec succès.')
+      setMessage(t('projectSettings.importOk'))
       navigate(`/projects/${id}`)
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Import impossible.')
+      setMessage(err instanceof Error ? err.message : t('projectSettings.importError'))
     }
     e.target.value = ''
   }
 
   const onDelete = async () => {
-    if (await confirm({ title: 'Supprimer le projet', message: `Supprimer définitivement « ${project.name} » et tout son contenu ? Cette action est irréversible.` })) {
+    if (await confirm({ title: t('projectSettings.deleteTitle'), message: t('projectSettings.deleteMessage', { name: project.name }) })) {
       await deleteProject(projectId)
       navigate('/')
     }
@@ -81,13 +83,13 @@ export default function ProjectSettingsPage() {
 
   return (
     <div className="page">
-      <h1>Paramètres du projet</h1>
+      <h1>{t('projectSettings.title')}</h1>
 
       <div className="panel">
-        <h2>Informations</h2>
+        <h2>{t('projectSettings.info')}</h2>
         <form onSubmit={onRename} style={{ maxWidth: 560 }}>
           <label className="field">
-            <span>Nom du projet</span>
+            <span>{t('projectSettings.nameLabel')}</span>
             <input
               type="text"
               value={name ?? project.name}
@@ -95,7 +97,7 @@ export default function ProjectSettingsPage() {
             />
           </label>
           <label className="field">
-            <span>Description</span>
+            <span>{t('projectSettings.descLabel')}</span>
             <input
               type="text"
               value={description ?? project.description}
@@ -103,54 +105,52 @@ export default function ProjectSettingsPage() {
             />
           </label>
           <button type="submit" className="btn btn-primary">
-            Enregistrer
+            {t('projectSettings.save')}
           </button>
           {message && <p className="muted">{message}</p>}
         </form>
         {stats && (
           <p className="muted">
-            Contenu : {stats.characters} personnage(s), {stats.relationships} relation(s), {stats.dialogueScenes} scène(s)
-            de dialogue, {stats.novels} roman(s), {stats.chapters} chapitre(s), {stats.plots} intrigue(s).
+            {t('projectSettings.stats', {
+              characters: stats.characters,
+              relationships: stats.relationships,
+              dialogues: stats.dialogueScenes,
+              novels: stats.novels,
+              chapters: stats.chapters,
+              plots: stats.plots,
+            })}
           </p>
         )}
       </div>
 
       <div className="panel">
-        <h2>Exporter / importer</h2>
+        <h2>{t('projectSettings.exportImport')}</h2>
         <p className="muted">
-          L'export se fait en <strong>un seul fichier <code>.lore</code></strong> : une archive ZIP qui contient la
-          sauvegarde du projet découpée en plusieurs fichiers — <code>project.json</code> (fichier de base : projet,
-          personnages, relations, intrigues), un fichier <code>.md</code> dédié par chapitre et un fichier{' '}
-          <code>.json</code> par scène de dialogue. C'est le même découpage que la synchronisation cloud, empaqueté
-          dans un seul fichier ouvrable avec n'importe quel outil ZIP. Dans l'app desktop, une fenêtre native
-          (Explorateur/Finder) vous demande où enregistrer le fichier.
+          {t('projectSettings.exportText')}
         </p>
         <div className="btn-row">
           <button type="button" className="btn btn-primary" onClick={onExportLore}>
-            📦 Exporter le projet (.lore)
+            {t('projectSettings.export')}
           </button>
           <label className="btn">
-            ⬆️ Importer un projet (.lore)
+            {t('projectSettings.import')}
             <input type="file" accept=".lore,application/zip" hidden onChange={onImport} />
           </label>
         </div>
       </div>
 
       <div className="panel">
-        <h2>Synchronisation cloud</h2>
+        <h2>{t('projectSettings.cloudSection')}</h2>
         <p className="muted">
-          La synchro automatique se configure globalement dans la page{' '}
-          <Link to="/cloud">☁️ Cloud</Link> (serveur WebDAV compatible Nextcloud/ownCloud). Chaque projet est alors
-          envoyé automatiquement vers votre cloud en plusieurs fichiers (<code>project.json</code>,{' '}
-          <code>chapters/*.md</code>, <code>dialogues/*.json</code>) et fusionné au démarrage.
+          {t('projectSettings.cloudText')} <Link to="/cloud">{t('app.cloud')}</Link> {t('projectSettings.cloudText2')}
         </p>
       </div>
 
       <div className="danger-zone">
-        <h2>Zone dangereuse</h2>
-        <p className="muted">Supprime le projet et tout son contenu, localement.</p>
+        <h2>{t('projectSettings.dangerZone')}</h2>
+        <p className="muted">{t('projectSettings.dangerText')}</p>
         <button type="button" className="btn btn-danger" onClick={onDelete}>
-          Supprimer définitivement le projet
+          {t('projectSettings.deleteProject')}
         </button>
       </div>
     </div>

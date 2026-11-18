@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link, useMatch, useNavigate } from 'react-router-dom'
 import { searchProject } from '../lib/queries'
-import { SEARCH_KIND_LABELS, type SearchResult } from '../lib/search'
+import { searchKindLabel, type SearchResult } from '../lib/search'
+import { useI18n } from '../i18n'
 
 export default function TopbarSearch() {
   const match = useMatch('/projects/:projectId/*')
   const projectId = match?.params.projectId ?? ''
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [open, setOpen] = useState(false)
@@ -81,19 +83,19 @@ export default function TopbarSearch() {
           type="text"
           autoComplete="off"
           spellCheck={false}
-          placeholder="🔍 Rechercher dans ce projet… (Ctrl+Espace)"
+          placeholder={t('search.placeholder')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={() => results.length > 0 && setOpen(true)}
-          aria-label="Recherche dans le projet"
-          title="Recherche dans le projet — Ctrl+Espace pour y accéder"
+          aria-label={t('search.aria')}
+          title={t('search.title')}
         />
       </form>
       {open && query.trim() !== '' && (
         <div className="topbar-search-results">
           {results.length === 0 ? (
-            <div className="ts-empty">Aucun résultat pour « {query.trim()} »</div>
+            <div className="ts-empty">{t('search.noResult', { q: query.trim() })}</div>
           ) : (
             results.map((r) => (
               <Link
@@ -104,14 +106,14 @@ export default function TopbarSearch() {
                   setQuery('')
                 }}
               >
-                <span className="ts-kind">{SEARCH_KIND_LABELS[r.kind]}</span>
+                <span className="ts-kind">{searchKindLabel(r.kind)}</span>
                 <span className="ts-title">{r.title}</span>
                 <span className="ts-snippet">{r.snippet}</span>
               </Link>
             ))
           )}
           <button type="button" className="ts-all" onClick={goToAll}>
-            Voir tous les résultats →
+            {t('search.seeAll')}
           </button>
         </div>
       )}

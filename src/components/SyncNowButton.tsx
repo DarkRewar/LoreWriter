@@ -1,19 +1,14 @@
 import { useState } from 'react'
 import { useMatch } from 'react-router-dom'
-import { loadCloudConfig, type SyncStatus } from '../lib/cloud'
+import { loadCloudConfig } from '../lib/cloud'
 import { syncProjectWithBackup } from '../lib/backup'
-
-const ACTION_LABELS: Record<SyncStatus['action'], string> = {
-  pushed: 'envoyé vers le cloud',
-  'pulled-merged': 'fusionné avec le cloud',
-  'up-to-date': 'déjà à jour',
-  'nothing-remote': 'premier envoi vers le cloud',
-}
+import { useI18n, type MessageKey } from '../i18n'
 
 /** Bouton « 🔄 Synchroniser maintenant » avec retour d'état (en cours / OK / erreur). */
 export default function SyncNowButton() {
   const match = useMatch('/projects/:projectId/*')
   const projectId = match?.params.projectId ?? ''
+  const { t, dateLocale } = useI18n()
   const [syncing, setSyncing] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const enabled = Boolean(loadCloudConfig()?.enabled)
@@ -24,9 +19,10 @@ export default function SyncNowButton() {
     setMsg(null)
     try {
       const st = await syncProjectWithBackup(projectId)
-      setMsg(`☁️ ${ACTION_LABELS[st.action]} · ${new Date(st.at).toLocaleTimeString('fr-FR')}`)
+      const action = t(`layout.syncActions.${st.action}` as MessageKey)
+      setMsg(t('syncButton.syncOk', { action, time: new Date(st.at).toLocaleTimeString(dateLocale) }))
     } catch (err) {
-      setMsg(`☁️ erreur de synchro : ${err instanceof Error ? err.message : 'inconnue'}`)
+      setMsg(t('syncButton.syncError', { error: err instanceof Error ? err.message : t('common.unknownError') }))
     } finally {
       setSyncing(false)
       window.setTimeout(() => setMsg(null), 5000)
@@ -36,9 +32,13 @@ export default function SyncNowButton() {
   return (
     <div className="sync-now">
       <button type="button" className="btn sync-now-btn" onClick={() => void run()} disabled={!enabled || syncing}>
-        {syncing ? '🔄 Synchronisation…' : '🔄 Synchroniser maintenant'}
+        {syncing ? t('syncButton.syncing') : t('syncButton.syncNow')}
       </button>
-      {!enabled && <div className="sync-msg">Cloud non configuré — <a href="#/cloud">configurer</a></div>}
+      {!enabled && (
+        <div className="sync-msg">
+          {t('syncButton.notConfigured')} <a href="#/cloud">{t('syncButton.configure')}</a>
+        </div>
+      )}
       {msg && <div className="sync-msg">{msg}</div>}
     </div>
   )

@@ -172,6 +172,13 @@ appareil ne réapparaît donc pas sur les autres.
 - **Toute action de suppression** passe par la modale de confirmation in-app : `const confirm = useConfirm()`
   (`src/components/ConfirmDialog.tsx`) puis `if (await confirm({ title, message })) { … }`. Ne jamais utiliser
   `window.confirm`.
+- **i18n (interface uniquement)** : toute chaîne UI passe par `const { t } = useI18n()` puis `t('section.cle', { vars })`.
+  Les dictionnaires vivent chacun dans leur fichier (`src/i18n/fr.ts` = référence typée, `src/i18n/en.ts` doit avoir
+  exactement les mêmes clés — imposé par le type `Messages` + un test de parité). Le **contenu écrit par
+  l'utilisateur n'est jamais traduit**. Langue par défaut = langue de l'OS (`navigator.language`), changeable à
+  tout moment via le sélecteur à drapeaux dans la topbar (persistance localStorage `lorewriter:lang`). Dans les
+  libs hors React, utiliser `tStandalone('cle')` (locale courante posée par le provider). Pour ajouter une langue :
+  nouveau fichier `src/i18n/<code>.ts` + entrée dans `LOCALES` + drapeau SVG dans `src/components/flags.tsx`.
 
 ## Structure du projet
 

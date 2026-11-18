@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { characterDisplayName, type Character, type Relationship } from '../types'
 import { relationshipTypeInfo } from '../lib/relationships'
+import { useI18n } from '../i18n'
 
 const stylesheet = [
   {
@@ -85,6 +86,7 @@ export function RelationshipGraph({
   relationships: Relationship[]
   projectId: string
 }) {
+  const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const navigate = useNavigate()
@@ -159,7 +161,7 @@ export function RelationshipGraph({
   }, [characters, relationships, projectId])
 
   if (characters.length === 0) {
-    return <p className="muted">Créez d'abord des personnages pour voir le diagramme.</p>
+    return <p className="muted">{t('relations.graphEmpty')}</p>
   }
   return <div ref={containerRef} className="graph-container" />
 }

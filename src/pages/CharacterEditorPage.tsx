@@ -9,6 +9,7 @@ import { computeAge } from '../lib/age'
 import { TagInput } from '../components/TagInput'
 import { MetadataEditor } from '../components/MetadataEditor'
 import { PortraitPicker } from '../components/PortraitPicker'
+import { useI18n } from '../i18n'
 
 interface FormState {
   firstName: string
@@ -39,6 +40,7 @@ const emptyForm: FormState = {
 }
 
 export default function CharacterEditorPage() {
+  const { t } = useI18n()
   const projectId = useProjectId()
   const { characterId } = useParams()
   const isEdit = Boolean(characterId)
@@ -75,12 +77,12 @@ export default function CharacterEditorPage() {
   if (isEdit && existing === null) {
     return (
       <div className="page">
-        <p>Personnage introuvable.</p>
-        <Link to={`/projects/${projectId}/characters`}>← Retour à la liste</Link>
+        <p>{t('characters.notFound')}</p>
+        <Link to={`/projects/${projectId}/characters`}>{t('characters.backToList')}</Link>
       </div>
     )
   }
-  if (!loaded) return <div className="page">Chargement…</div>
+  if (!loaded) return <div className="page">{t('common.loading')}</div>
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -89,7 +91,7 @@ export default function CharacterEditorPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!form.firstName.trim() && !form.lastName.trim() && !form.nickname.trim()) {
-      setError('Renseigne au moins un prénom, un nom ou un surnom.')
+      setError(t('characterEditor.errorName'))
       return
     }
     const now = Date.now()
@@ -117,36 +119,36 @@ export default function CharacterEditorPage() {
 
   return (
     <div className="page">
-      <h1>{isEdit ? 'Modifier le personnage' : 'Nouveau personnage'}</h1>
+      <h1>{isEdit ? t('characterEditor.editTitle') : t('characterEditor.newTitle')}</h1>
       <form onSubmit={submit} style={{ maxWidth: 760 }}>
         <div className="panel">
-          <h2>Identité</h2>
+          <h2>{t('characterEditor.identity')}</h2>
           <label className="field">
-            <span>Prénom</span>
-            <input type="text" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder="Ex. : Éléonore" />
+            <span>{t('characterEditor.firstName')}</span>
+            <input type="text" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder={t('characterEditor.firstNamePlaceholder')} />
           </label>
           <label className="field">
-            <span>Nom</span>
-            <input type="text" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="Ex. : Darnac" />
+            <span>{t('characterEditor.lastName')}</span>
+            <input type="text" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder={t('characterEditor.lastNamePlaceholder')} />
           </label>
           <label className="field">
-            <span>Surnom (optionnel)</span>
-            <input type="text" value={form.nickname} onChange={(e) => set('nickname', e.target.value)} placeholder="Ex. : « La Lame »" />
+            <span>{t('characterEditor.nickname')}</span>
+            <input type="text" value={form.nickname} onChange={(e) => set('nickname', e.target.value)} placeholder={t('characterEditor.nicknamePlaceholder')} />
           </label>
           <label className="field">
-            <span>Rôle dans l'histoire</span>
-            <input type="text" value={form.role} onChange={(e) => set('role', e.target.value)} placeholder="Ex. : protagoniste, antagoniste…" />
+            <span>{t('characterEditor.role')}</span>
+            <input type="text" value={form.role} onChange={(e) => set('role', e.target.value)} placeholder={t('characterEditor.rolePlaceholder')} />
           </label>
           <label className="field">
-            <span>Portrait</span>
+            <span>{t('characterEditor.portrait')}</span>
             <PortraitPicker value={form.portrait} onChange={(v) => set('portrait', v)} />
           </label>
         </div>
 
         <div className="panel">
-          <h2>Âge</h2>
+          <h2>{t('characterEditor.age')}</h2>
           <label className="field">
-            <span>Date de naissance</span>
+            <span>{t('characterEditor.birthDate')}</span>
             <input
               type="date"
               value={form.birthDate}
@@ -155,7 +157,7 @@ export default function CharacterEditorPage() {
             />
           </label>
           {computedAge !== null && !form.useManualAge && (
-            <p className="muted">Âge actuel calculé : {computedAge} an{computedAge > 1 ? 's' : ''}</p>
+            <p className="muted">{t('characterEditor.computedAge', { age: computedAge, s: computedAge > 1 ? 's' : '' })}</p>
           )}
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
             <input
@@ -164,48 +166,48 @@ export default function CharacterEditorPage() {
               onChange={(e) => set('useManualAge', e.target.checked)}
               style={{ width: 'auto' }}
             />
-            <span>Définir l'âge manuellement (date de naissance inconnue)</span>
+            <span>{t('characterEditor.manualAge')}</span>
           </label>
           {form.useManualAge && (
             <label className="field">
-              <span>Âge</span>
+              <span>{t('characterEditor.ageField')}</span>
               <input
                 type="number"
                 min={0}
                 max={1000}
                 value={form.manualAge}
                 onChange={(e) => set('manualAge', e.target.value)}
-                placeholder="Ex. : 34"
+                placeholder={t('characterEditor.agePlaceholder')}
               />
             </label>
           )}
         </div>
 
         <div className="panel">
-          <h2>Tags</h2>
-          <TagInput value={form.tags} onChange={(v) => set('tags', v)} placeholder="Ex. : héros, magique, ville… (Entrée pour ajouter)" />
+          <h2>{t('characterEditor.tags')}</h2>
+          <TagInput value={form.tags} onChange={(v) => set('tags', v)} placeholder={t('characterEditor.tagsPlaceholder')} />
         </div>
 
         <div className="panel">
-          <h2>Métadonnées libres</h2>
+          <h2>{t('characterEditor.freeMetadata')}</h2>
           <MetadataEditor value={form.metadata} onChange={(v) => set('metadata', v)} />
         </div>
 
         <div className="panel">
-          <h2>Notes</h2>
+          <h2>{t('characterEditor.notes')}</h2>
           <label className="field">
-            <span>Description, personnalité, histoire…</span>
-            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Quelques lignes sur le personnage…" />
+            <span>{t('characterEditor.descLabel')}</span>
+            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} placeholder={t('characterEditor.descPlaceholder')} />
           </label>
         </div>
 
         {error && <p className="form-error">{error}</p>}
         <div className="btn-row">
           <button type="submit" className="btn btn-primary">
-            Enregistrer
+            {t('common.save')}
           </button>
           <Link className="btn" to={isEdit ? `/projects/${projectId}/characters/${characterId}` : `/projects/${projectId}/characters`}>
-            Annuler
+            {t('common.cancel')}
           </Link>
         </div>
       </form>

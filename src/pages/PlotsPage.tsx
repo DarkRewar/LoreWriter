@@ -4,17 +4,19 @@ import { db } from '../db'
 import { useProjectId } from '../hooks'
 import type { PlotStatus } from '../types'
 import { useConfirm } from '../components/ConfirmDialog'
+import { useI18n, type MessageKey } from '../i18n'
 import { addTombstone } from '../lib/tombstones'
 
-const STATUS_LABELS: Record<PlotStatus, string> = {
-  idea: '💡 Idée',
-  draft: '📝 Brouillon',
-  wip: '🔥 En cours',
-  done: '✅ Terminée',
+const STATUS_KEYS: Record<PlotStatus, MessageKey> = {
+  idea: 'plots.status.idea',
+  draft: 'plots.status.draft',
+  wip: 'plots.status.wip',
+  done: 'plots.status.done',
 }
 
 export default function PlotsPage() {
   const confirm = useConfirm()
+  const { t } = useI18n()
   const projectId = useProjectId()
   const plots = useLiveQuery(
     () => db.plots.where('projectId').equals(projectId).toArray(),
@@ -22,7 +24,7 @@ export default function PlotsPage() {
   )
 
   const remove = async (id: string, title: string) => {
-    if (await confirm({ message: `Supprimer l'intrigue « ${title} » ?` })) {
+    if (await confirm({ message: t('plots.deleteConfirm', { title }) })) {
       await addTombstone(projectId, 'plot', id)
       await db.plots.delete(id)
       await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -32,14 +34,14 @@ export default function PlotsPage() {
   return (
     <div className="page">
       <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Intrigues</h1>
+        <h1 style={{ margin: 0 }}>{t('plots.title')}</h1>
         <Link className="btn btn-primary" style={{ marginLeft: 'auto' }} to={`/projects/${projectId}/plots/new`}>
-          + Nouvelle intrigue
+          {t('plots.new')}
         </Link>
       </div>
 
       {!plots || plots.length === 0 ? (
-        <p className="muted">Aucune intrigue pour l'instant — structurez votre récit !</p>
+        <p className="muted">{t('plots.none')}</p>
       ) : (
         <div className="character-list">
           {plots
@@ -49,7 +51,7 @@ export default function PlotsPage() {
               <div key={p.id} className="character-row">
                 <span className="who">
                   <Link className="name" to={`/projects/${projectId}/plots/${p.id}`}>
-                    🧩 {p.title || 'Sans titre'}
+                    🧩 {p.title || t('plots.untitled')}
                   </Link>
                   <br />
                   <span className="sub">
@@ -57,8 +59,8 @@ export default function PlotsPage() {
                     {p.tags.join(' · ')}
                   </span>
                 </span>
-                <span className={`badge ${p.status}`}>{STATUS_LABELS[p.status]}</span>
-                <button type="button" className="btn-icon" aria-label="Supprimer l'intrigue" onClick={() => void remove(p.id, p.title)}>
+                <span className={`badge ${p.status}`}>{t(STATUS_KEYS[p.status])}</span>
+                <button type="button" className="btn-icon" aria-label={t('plots.deleteAria')} onClick={() => void remove(p.id, p.title)}>
                   🗑
                 </button>
               </div>
