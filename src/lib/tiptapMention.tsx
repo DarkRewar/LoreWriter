@@ -77,6 +77,8 @@ let currentProjectId = ''
 const MentionWithKind = Mention.extend({
   addProseMirrorPlugins() {
     return [
+      // indispensable : conserve le plugin de suggestion « @ » de l'extension Mention parente
+      ...(this.parent?.() ?? []),
       new Plugin({
         key: new PluginKey('mention-click'),
         props: {
