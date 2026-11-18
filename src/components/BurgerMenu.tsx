@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useMatch } from 'react-router-dom'
 import { projectNavItems } from '../nav'
+import SyncNowButton from './SyncNowButton'
 
 /** Burger menu mobile : nav app (projets/cloud) + nav du projet courant. Visible en ≤ 860px. */
 export default function BurgerMenu() {
@@ -47,6 +48,7 @@ export default function BurgerMenu() {
             <div className="burger-section-title">Projet</div>
             <Link to="/">🏠 Projets</Link>
             <Link to="/cloud">☁️ Cloud</Link>
+            {projectId && <SyncNowButton />}
           </div>
           {projectId && (
             <div className="burger-section">

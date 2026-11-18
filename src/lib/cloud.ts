@@ -11,6 +11,8 @@ import {
   type ProjectFiles,
 } from './projectFiles'
 
+export type BackupMode = 'off' | 'each-sync' | 'daily'
+
 export interface CloudConfig {
   provider: 'webdav'
   /** URL de base WebDAV, ex. https://cloud.example.com/remote.php/dav/files/alice */
@@ -21,6 +23,10 @@ export interface CloudConfig {
   /** Dossier distant, ex. LoreWriter */
   folder: string
   enabled: boolean
+  /** Sauvegarde .lore automatique après une synchro réussie ('off' par défaut). */
+  backupMode?: BackupMode
+  /** Dossier de sauvegarde choisi dans l'app desktop (sinon boîte de dialogue / téléchargement). */
+  backupDir?: string
 }
 
 const STORAGE_KEY = 'lorewriter:cloud:v1'
@@ -40,6 +46,36 @@ export function saveCloudConfig(c: CloudConfig): void {
 
 export function clearCloudConfig(): void {
   localStorage.removeItem(STORAGE_KEY)
+}
+
+const lastBackupKey = (projectId: string) => `lorewriter:backup:last:${projectId}`
+
+/** Date de la dernière sauvegarde .lore automatique du projet (null si jamais). */
+export function lastBackupAt(projectId: string): number | null {
+  try {
+    const raw = localStorage.getItem(lastBackupKey(projectId))
+    const n = raw ? Number(raw) : NaN
+    return Number.isFinite(n) ? n : null
+  } catch {
+    return null
+  }
+}
+
+export function markBackupDone(projectId: string, at = Date.now()): void {
+  try {
+    localStorage.setItem(lastBackupKey(projectId), String(at))
+  } catch {
+    /* stockage indisponible : on ignore */
+  }
+}
+
+/** Décide si une sauvegarde .lore doit être faite après une synchro réussie. */
+export function shouldBackupNow(cfg: CloudConfig, projectId: string, now = Date.now()): boolean {
+  const mode = cfg.backupMode ?? 'off'
+  if (!cfg.enabled || mode === 'off') return false
+  if (mode === 'each-sync') return true
+  const last = lastBackupAt(projectId)
+  return last === null || now - last >= 24 * 60 * 60 * 1000
 }
 
 export function b64encodeUnicode(s: string): string {

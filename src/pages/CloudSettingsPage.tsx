@@ -1,16 +1,27 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { b64encodeUnicode, clearCloudConfig, loadCloudConfig, saveCloudConfig, type CloudConfig } from '../lib/cloud'
+import {
+  b64encodeUnicode,
+  clearCloudConfig,
+  loadCloudConfig,
+  saveCloudConfig,
+  type BackupMode,
+  type CloudConfig,
+} from '../lib/cloud'
+import { isDesktopApp, pickDirectoryNative } from '../lib/desktop'
+
+const DEFAULT_CONFIG: CloudConfig = {
+  provider: 'webdav',
+  baseUrl: '',
+  username: '',
+  password: '',
+  folder: 'LoreWriter',
+  enabled: false,
+  backupMode: 'off',
+}
 
 export default function CloudSettingsPage() {
-  const [config, setConfig] = useState<CloudConfig>(() => loadCloudConfig() ?? {
-    provider: 'webdav',
-    baseUrl: '',
-    username: '',
-    password: '',
-    folder: 'LoreWriter',
-    enabled: false,
-  })
+  const [config, setConfig] = useState<CloudConfig>(() => loadCloudConfig() ?? DEFAULT_CONFIG)
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null)
   const [testing, setTesting] = useState(false)
 
@@ -47,8 +58,13 @@ export default function CloudSettingsPage() {
 
   const onClear = () => {
     clearCloudConfig()
-    setConfig({ provider: 'webdav', baseUrl: '', username: '', password: '', folder: 'LoreWriter', enabled: false })
+    setConfig(DEFAULT_CONFIG)
     setStatus({ ok: true, message: 'Configuration cloud supprimée.' })
+  }
+
+  const onPickBackupDir = async () => {
+    const dir = await pickDirectoryNative()
+    if (dir) set('backupDir', dir)
   }
 
   return (
@@ -94,6 +110,36 @@ export default function CloudSettingsPage() {
             <input type="checkbox" checked={config.enabled} onChange={(e) => set('enabled', e.target.checked)} style={{ width: 'auto' }} />
             <span>Activer la synchronisation automatique (au démarrage et toutes les 60 s)</span>
           </label>
+        </div>
+
+        <div className="panel">
+          <h2>Sauvegardes .lore automatiques</h2>
+          <label className="field">
+            <span>Fréquence (après chaque synchro réussie)</span>
+            <select
+              value={config.backupMode ?? 'off'}
+              onChange={(e) => set('backupMode', e.target.value as BackupMode)}
+            >
+              <option value="off">Désactivées</option>
+              <option value="each-sync">À chaque synchro</option>
+              <option value="daily">Une fois par jour</option>
+            </select>
+          </label>
+          {(config.backupMode ?? 'off') !== 'off' &&
+            (isDesktopApp() ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <button type="button" className="btn" onClick={() => void onPickBackupDir()}>
+                  {config.backupDir ? 'Changer le dossier…' : 'Choisir le dossier de sauvegarde…'}
+                </button>
+                <span className="muted">
+                  {config.backupDir ?? 'Aucun dossier choisi : boîte de dialogue à chaque sauvegarde.'}
+                </span>
+              </div>
+            ) : (
+              <p className="muted">
+                Dans le navigateur, chaque sauvegarde <code>.lore</code> est téléchargée (dossier Téléchargements).
+              </p>
+            ))}
         </div>
 
         <div className="btn-row">

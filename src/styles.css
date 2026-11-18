@@ -386,6 +386,9 @@ a.project-card { text-decoration: none; color: var(--text); }
 .sidebar-footer a { color: var(--accent-2); text-decoration: none; }
 .sidebar-footer a:hover { text-decoration: underline; }
 .sync-msg { margin-top: 6px; }
+.sync-now { margin-bottom: 8px; }
+.sync-now-btn { width: 100%; }
+.sync-now .sync-msg a { color: var(--accent-2); }
 
 .project-content { flex: 1; min-width: 0; }
 

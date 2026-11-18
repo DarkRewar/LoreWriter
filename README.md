@@ -141,10 +141,16 @@ Mac, téléphone) via n'importe quel serveur **WebDAV** (Nextcloud, ownCloud, NA
 (téléphone) / menu navigateur (PC/Mac). Sur chaque appareil, refaites l'étape 3 avec le même cloud.
 
 **Ensuite** : à l'ouverture d'un projet, la version distante est téléchargée et fusionnée (modification la plus
-récente gagnante, entité par entité), puis renvoyée ; la synchro tourne aussi toutes les 60 s et via le bouton
-💾 / **Ctrl+S**. Astuce : les chapitres sont de vrais fichiers `.md` dans le cloud — éditables aussi depuis
+récente gagnante, entité par entité), puis renvoyée ; la synchro tourne aussi toutes les 60 s, via le bouton
+💾 / **Ctrl+S**, et via le bouton **🔄 Synchroniser maintenant** de la barre latérale (avec retour succès/erreur).
+Astuce : les chapitres sont de vrais fichiers `.md` dans le cloud — éditables aussi depuis
 l'éditeur de fichiers de Nextcloud. Règle pour éviter les conflits : ne pas modifier la même entité (chapitre,
 scène…) en même temps sur deux appareils.
+
+**Sauvegardes .lore automatiques** (page ☁️ Cloud, désactivées par défaut) : après chaque synchro réussie
+(« à chaque synchro » ou « une fois par jour »), un fichier `<projet>-AAAAMMJJ-HHMM.lore` est exporté — dans le
+dossier choisi via la boîte de dialogue native dans l'app desktop, sinon via la boîte de dialogue de sauvegarde,
+ou téléchargé dans le navigateur/PWA.
 
 Sur un **nouvel appareil**, la page d'accueil liste les projets présents sur le cloud mais pas encore en local
 (section « ☁️ Projets sur le cloud ») avec un bouton **⬇️ Télécharger** pour les récupérer.

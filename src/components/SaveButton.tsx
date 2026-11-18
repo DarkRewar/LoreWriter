@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useMatch } from 'react-router-dom'
 import { db } from '../db'
-import { loadCloudConfig, syncProjectWithCloud, type SyncStatus } from '../lib/cloud'
+import { loadCloudConfig, type SyncStatus } from '../lib/cloud'
+import { syncProjectWithBackup } from '../lib/backup'
 import { requestSaveNow } from '../lib/save'
 
 const ACTION_LABELS: Record<SyncStatus['action'], string> = {
@@ -23,7 +24,7 @@ export default function SaveButton() {
     try {
       const cfg = loadCloudConfig()
       if (cfg?.enabled) {
-        const st = await syncProjectWithCloud(projectId, cfg)
+        const st = await syncProjectWithBackup(projectId, cfg)
         setMsg(`💾 ${ACTION_LABELS[st.action]} · ${time}`)
       } else {
         await db.projects.update(projectId, { updatedAt: Date.now() })

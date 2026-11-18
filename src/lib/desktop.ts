@@ -33,3 +33,31 @@ export async function saveFileNative(
   await writeFile(path, bytes)
   return 'saved'
 }
+
+/**
+ * Ouvre la boîte de dialogue native pour choisir un dossier (desktop uniquement).
+ * Retourne le chemin choisi, ou null hors desktop / si annulé.
+ */
+export async function pickDirectoryNative(): Promise<string | null> {
+  if (!isDesktopApp()) return null
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const dir = await open({ directory: true, multiple: false })
+  return typeof dir === 'string' ? dir : null
+}
+
+/**
+ * Écrit `bytes` dans `<dir>/<name>` sans boîte de dialogue (desktop uniquement).
+ * Retourne false si l'écriture est refusée (hors scope fs) : le caller peut
+ * alors retomber sur `saveFileNative`.
+ */
+export async function writeFileNative(dir: string, name: string, bytes: Uint8Array): Promise<boolean> {
+  if (!isDesktopApp()) return false
+  try {
+    const { join } = await import('@tauri-apps/api/path')
+    const { writeFile } = await import('@tauri-apps/plugin-fs')
+    await writeFile(await join(dir, name), bytes)
+    return true
+  } catch {
+    return false
+  }
+}

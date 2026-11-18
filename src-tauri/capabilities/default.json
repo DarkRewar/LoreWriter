@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Capacités par défaut de la fenêtre principale",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-save", "fs:allow-write-file"]
+  "permissions": ["core:default", "dialog:allow-save", "dialog:allow-open", "fs:allow-write-file"]
 }

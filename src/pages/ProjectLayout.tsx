@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Link, Outlet } from 'react-router-dom'
 import { useProject, useProjectId } from '../hooks'
-import { loadCloudConfig, lastSyncStatus, syncProjectWithCloud, type SyncStatus } from '../lib/cloud'
+import { loadCloudConfig, lastSyncStatus, type SyncStatus } from '../lib/cloud'
+import { syncProjectWithBackup } from '../lib/backup'
+import SyncNowButton from '../components/SyncNowButton'
 import { projectNavItems } from '../nav'
 
 const ACTION_LABELS: Record<SyncStatus['action'], string> = {
@@ -23,7 +25,7 @@ export default function ProjectLayout() {
       const cfg = loadCloudConfig()
       if (!cfg?.enabled) return
       try {
-        const st = await syncProjectWithCloud(projectId)
+        const st = await syncProjectWithBackup(projectId)
         if (cancelled) return
         setLastSync(st)
         setSyncMsg(`☁️ ${ACTION_LABELS[st.action]} à ${new Date(st.at).toLocaleTimeString('fr-FR')}`)
@@ -66,6 +68,7 @@ export default function ProjectLayout() {
           ))}
         </nav>
         <div className="sidebar-footer">
+          <SyncNowButton />
           <Link to="/cloud">☁️ Configurer le cloud</Link>
           {lastSync && !syncMsg && (
             <div className="sync-msg">☁️ dernière synchro : {new Date(lastSync.at).toLocaleString('fr-FR')}</div>
