@@ -97,6 +97,11 @@ body {
 }
 .brand:hover { color: var(--accent); transform: translateY(-1px); }
 
+/* côtés de la topbar : gauche (burger + logo + langue) collé à gauche, droite (💾 + nav) à droite —
+   même quand la recherche/bouton 💾 sont absents (page d'accueil) */
+.header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.header-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
 .app-nav { display: flex; gap: 6px; }
 .app-nav a {
   color: var(--muted);
@@ -129,7 +134,7 @@ a:hover { color: var(--accent-strong); }
 .muted { color: var(--muted); }
 
 /* ---------- recherche topbar ---------- */
-.save-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; margin-left: auto; }
+.save-wrap { position: relative; display: flex; align-items: center; flex-shrink: 0; }
 .save-btn { font-size: 17px; }
 .save-msg {
   position: absolute;

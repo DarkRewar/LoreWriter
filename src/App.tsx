@@ -29,17 +29,21 @@ function AppShell() {
     <ConfirmProvider>
     <div className="app">
       <header className="app-header">
-        <BurgerMenu />
-        <Link to="/" className="brand">
-          ✒️ LoreWriter
-        </Link>
-        <LanguageMenu />
+        <div className="header-left">
+          <BurgerMenu />
+          <Link to="/" className="brand">
+            ✒️ LoreWriter
+          </Link>
+          <LanguageMenu />
+        </div>
         <TopbarSearch />
-        <SaveButton />
-        <nav className="app-nav">
-          <Link to="/">{t('app.projects')}</Link>
-          <Link to="/cloud">{t('app.cloud')}</Link>
-        </nav>
+        <div className="header-right">
+          <SaveButton />
+          <nav className="app-nav">
+            <Link to="/">{t('app.projects')}</Link>
+            <Link to="/cloud">{t('app.cloud')}</Link>
+          </nav>
+        </div>
       </header>
       <main className="app-main">
         <Routes>
