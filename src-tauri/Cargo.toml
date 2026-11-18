@@ -1,6 +1,6 @@
 [package]
 name = "lorewriter"
-version = "0.1.0"
+version = "0.2.0"
 description = "LoreWriter — atelier de storytelling (app desktop Windows / macOS)"
 edition = "2021"
 # Certaines dépendances transitives (ex. block-buffer 0.12) utilisent l'édition 2024 :
