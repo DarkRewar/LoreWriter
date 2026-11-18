@@ -613,7 +613,9 @@ table.data tbody tr:hover { background: var(--panel-2); }
   .novel-page > .writing-sheet { flex: 1; }
   .novel-page .writing-sheet .chapter-title { flex-shrink: 0; }
   .novel-page .rich-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-  .novel-page .rich-content { flex: 1; min-height: 0; overflow-y: auto; padding: 32px 48px; }
+  /* éditeur en hauteur fixe : la barre d'outil reste dans le flux (sticky la ferait chevaucher la 1re ligne) */
+  .novel-page .rich-toolbar { position: static; box-shadow: none; }
+  .novel-page .rich-content { flex: 1; min-height: 0; overflow-y: auto; padding: 24px 48px; }
   .novel-page .rich-content .ProseMirror { min-height: 100%; }
 }
 
