@@ -89,6 +89,11 @@ export function cloudDialogueFileUrl(config: CloudConfig, projectId: string, sce
   return cloudUrl(config, projectId, DIALOGUES_DIR, `${sceneId}.json`)
 }
 
+/** Dossier racine contenant un sous-dossier par projet : `<base>/<folder>/lorewriter/`. */
+export function cloudProjectsDirUrl(config: CloudConfig): string {
+  return `${cloudUrl(config)}/`
+}
+
 async function ensureCollections(config: CloudConfig, fileUrl: string): Promise<void> {
   const base = config.baseUrl.replace(/\/+$/, '')
   if (!fileUrl.startsWith(base + '/')) return
@@ -130,7 +135,7 @@ async function deleteRemote(config: CloudConfig, url: string): Promise<void> {
  * Extrait les noms des fichiers enfants d'une collection WebDAV depuis une
  * réponse PROPFIND (multistatus), relativement à l'URL du dossier listé.
  */
-export function parsePropfindHrefs(xml: string, dirUrl: string): string[] {
+function parsePropfindChildren(xml: string, dirUrl: string): string[] {
   const hrefs = [...xml.matchAll(/<(?:[a-zA-Z][\w.-]*:)?href[^>]*>([^<]+)<\/(?:[a-zA-Z][\w.-]*:)?href>/gi)].map((m) => m[1])
   let dirPath: string
   try {
@@ -156,22 +161,78 @@ export function parsePropfindHrefs(xml: string, dirUrl: string): string[] {
     }
     if (decoded.startsWith(dirPath)) {
       const child = decoded.slice(dirPath.length)
-      if (child && !child.endsWith('/')) out.push(child)
+      if (child) out.push(child)
     }
   }
   return [...new Set(out)]
 }
 
-/** Liste les fichiers d'un dossier distant WebDAV (PROPFIND Depth: 1). */
-async function listRemoteFiles(config: CloudConfig, dirUrl: string): Promise<string[]> {
+/** Enfants fichiers d'un dossier distant (les dossiers, terminés par « / », sont exclus). */
+export function parsePropfindHrefs(xml: string, dirUrl: string): string[] {
+  return parsePropfindChildren(xml, dirUrl).filter((c) => !c.endsWith('/'))
+}
+
+/** Enfants dossiers d'un dossier distant (sans le « / » final). */
+export function parsePropfindDirs(xml: string, dirUrl: string): string[] {
+  return parsePropfindChildren(xml, dirUrl)
+    .filter((c) => c.endsWith('/'))
+    .map((c) => c.slice(0, -1))
+}
+
+async function propfindDir(config: CloudConfig, dirUrl: string): Promise<string> {
   const res = await fetch(dirUrl, {
     method: 'PROPFIND',
     headers: { ...authHeader(config), Depth: '1', 'Content-Type': 'application/xml; charset=utf-8' },
     body: '<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><prop><resourcetype/></prop></propfind>',
   })
-  if (res.status === 404) return []
+  if (res.status === 404) return ''
   if (!res.ok && res.status !== 207) throw new Error(`Échec du listage distant (HTTP ${res.status})`)
-  return parsePropfindHrefs(await res.text(), dirUrl)
+  return res.text()
+}
+
+/** Liste les fichiers d'un dossier distant WebDAV (PROPFIND Depth: 1). */
+async function listRemoteFiles(config: CloudConfig, dirUrl: string): Promise<string[]> {
+  return parsePropfindHrefs(await propfindDir(config, dirUrl), dirUrl)
+}
+
+/** Liste les sous-dossiers d'un dossier distant WebDAV (PROPFIND Depth: 1). */
+async function listRemoteDirs(config: CloudConfig, dirUrl: string): Promise<string[]> {
+  return parsePropfindDirs(await propfindDir(config, dirUrl), dirUrl)
+}
+
+export interface RemoteProjectInfo {
+  id: string
+  name: string
+  updatedAt: number
+}
+
+/** Découvre les projets présents sur le serveur WebDAV (un dossier par projet sous lorewriter/). */
+export async function listRemoteProjects(config: CloudConfig): Promise<RemoteProjectInfo[]> {
+  const dirUrl = cloudProjectsDirUrl(config)
+  const dirs = await listRemoteDirs(config, dirUrl)
+  const out: RemoteProjectInfo[] = []
+  for (const id of dirs) {
+    const base = await fetchText(config, `${dirUrl}${encodeURIComponent(id)}/${BASE_FILE_NAME}`)
+    if (!base) continue
+    try {
+      const parsed = JSON.parse(base) as { project?: { id?: string; name?: string; updatedAt?: number } }
+      out.push({ id: parsed.project?.id ?? id, name: parsed.project?.name ?? id, updatedAt: parsed.project?.updatedAt ?? 0 })
+    } catch {
+      // project.json illisible : on ignore ce dossier
+    }
+  }
+  return out.sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+/** Télécharge un projet distant complet et l'importe en local. Retourne l'id du projet. */
+export async function downloadRemoteProject(projectId: string, config?: CloudConfig | null): Promise<string> {
+  const cfg = config === undefined ? loadCloudConfig() : config
+  if (!cfg || !cfg.enabled) throw new Error('Synchronisation cloud non configurée ou désactivée.')
+  const pulled = await pullProjectSnapshot(cfg, projectId)
+  if (!pulled) throw new Error('Projet introuvable sur le serveur.')
+  await applySnapshot(pulled.snapshot, 'replace')
+  if (pulled.legacyUrl) await deleteRemote(cfg, pulled.legacyUrl)
+  return pulled.snapshot.project.id
 }
 
 export interface SyncStatus {

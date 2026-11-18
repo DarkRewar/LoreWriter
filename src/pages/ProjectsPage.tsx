@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../db'
@@ -13,6 +13,7 @@ import {
 } from '../lib/queries'
 import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 import { saveFileNative } from '../lib/desktop'
+import { downloadRemoteProject, listRemoteProjects, loadCloudConfig, type RemoteProjectInfo } from '../lib/cloud'
 
 function ProjectCard({ project }: { project: Project }) {
   const navigate = useNavigate()
@@ -87,7 +88,42 @@ export default function ProjectsPage() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
+  const [remote, setRemote] = useState<RemoteProjectInfo[] | null>(null)
+  const [remoteError, setRemoteError] = useState('')
+  const [downloading, setDownloading] = useState<string | null>(null)
   const navigate = useNavigate()
+
+  const localIds = useMemo(() => new Set((projects ?? []).map((p) => p.id)), [projects])
+  const cloudOn = useMemo(() => loadCloudConfig()?.enabled === true, [])
+  const remoteOnly = useMemo(() => (remote ?? []).filter((r) => !localIds.has(r.id)), [remote, localIds])
+
+  useEffect(() => {
+    const cfg = loadCloudConfig()
+    if (!cfg?.enabled) return
+    let cancelled = false
+    listRemoteProjects(cfg)
+      .then((r) => {
+        if (!cancelled) setRemote(r)
+      })
+      .catch((err) => {
+        if (!cancelled) setRemoteError(err instanceof Error ? err.message : 'Listage distant impossible.')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const onDownloadRemote = async (id: string) => {
+    setDownloading(id)
+    setRemoteError('')
+    try {
+      const pid = await downloadRemoteProject(id)
+      navigate(`/projects/${pid}`)
+    } catch (err) {
+      setRemoteError(err instanceof Error ? err.message : 'Téléchargement impossible.')
+      setDownloading(null)
+    }
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -147,7 +183,46 @@ export default function ProjectsPage() {
           ))}
         </div>
       ) : (
-        <p className="muted">Aucun projet pour l'instant — créez votre premier univers ci-dessus. ✨</p>
+        !remoteOnly.length && <p className="muted">Aucun projet pour l'instant — créez votre premier univers ci-dessus. ✨</p>
+      )}
+
+      {cloudOn && (
+        <div className="panel" style={{ marginTop: 24 }}>
+          <h2>☁️ Projets sur le cloud</h2>
+          {remoteError && <p className="form-error">{remoteError}</p>}
+          {remote === null && !remoteError ? (
+            <p className="muted">Recherche de projets distants…</p>
+          ) : remoteOnly.length === 0 ? (
+            <p className="muted">
+              {remote && remote.length > 0
+                ? 'Tous les projets du cloud sont déjà présents ici.'
+                : 'Aucun projet distant pour l’instant — configurez la synchro dans '}
+              {remote && remote.length === 0 && <Link to="/cloud">☁️ Cloud</Link>}
+            </p>
+          ) : (
+            <>
+              <p className="muted">Présents sur votre serveur WebDAV mais pas encore sur cet appareil :</p>
+              <div className="projects-grid">
+                {remoteOnly.map((r) => (
+                  <div className="project-card" key={r.id}>
+                    <h3>☁️ {r.name}</h3>
+                    <div className="counts">modifié le {new Date(r.updatedAt).toLocaleString('fr-FR')}</div>
+                    <div className="card-actions">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={downloading !== null}
+                        onClick={() => void onDownloadRemote(r.id)}
+                      >
+                        {downloading === r.id ? 'Téléchargement…' : '⬇️ Télécharger'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   )
