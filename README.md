@@ -126,6 +126,9 @@ appareil, configurez le même cloud : à l'ouverture d'un projet, la version dis
 la locale (modification la plus récente gagnante), puis renvoyée. Un ancien fichier unique `<id-projet>.json` est
 automatiquement migré vers ce format multi-fichiers.
 
+Sur un **nouvel appareil**, la page d'accueil liste les projets présents sur le cloud mais pas encore en local
+(section « ☁️ Projets sur le cloud ») avec un bouton **⬇️ Télécharger** pour les récupérer.
+
 > 🔒 Les identifiants restent dans le stockage local du navigateur et ne sont transmis qu'à votre serveur WebDAV.
 
 ## Structure du projet
