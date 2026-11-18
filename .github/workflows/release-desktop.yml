@@ -42,7 +42,9 @@ jobs:
             rustTargets: x86_64-pc-windows-msvc
             tauriTarget: x86_64-pc-windows-msvc
             bundles: nsis,msi
-            bundleGlob: 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.exe\nsrc-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.msi'
+            bundleGlob: |
+              src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.exe
+              src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**/*.msi
           - name: macos-universal
             os: macos-latest
             rustTargets: x86_64-apple-darwin,aarch64-apple-darwin
