@@ -100,6 +100,17 @@ export interface Chapter {
   updatedAt: number
 }
 
+export interface WikiEntry {
+  id: string
+  projectId: string
+  /** Intitulé de l'entrée (le mot du dictionnaire). */
+  title: string
+  /** Description riche au format HTML (éditeur TipTap), exportable en Markdown. */
+  content: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type PlotStatus = 'idea' | 'draft' | 'wip' | 'done'
 
 export interface Plot {

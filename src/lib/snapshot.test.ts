@@ -22,6 +22,7 @@ const baseSnapshot = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => (
   novels: [],
   chapters: [],
   plots: [],
+  wiki: [],
   ...over,
 })
 
@@ -93,6 +94,7 @@ describe('remapSnapshotIds', () => {
       novels: [{ id: 'n1', projectId: 'p1', title: 'Roman', createdAt: 1, updatedAt: 1 }],
       chapters: [{ id: 'ch1', projectId: 'p1', novelId: 'n1', title: 'Chapitre 1', content: '<p>x</p>', order: 0, createdAt: 1, updatedAt: 1 }],
       plots: [{ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c2'], createdAt: 1, updatedAt: 1 }],
+      wiki: [{ id: 'w1', projectId: 'p1', title: 'Aubeval', content: '<p>Le royaume…</p>', createdAt: 1, updatedAt: 1 }],
     })
     const copy = remapSnapshotIds(snap, 'p2', 999)
     expect(copy.project.id).toBe('p2')
@@ -108,6 +110,8 @@ describe('remapSnapshotIds', () => {
     expect(copy.novels[0].projectId).toBe('p2')
     expect(copy.chapters[0].novelId).toBe(copy.novels[0].id)
     expect(copy.plots[0].characterIds).toEqual([c2new.id])
+    expect(copy.wiki[0].projectId).toBe('p2')
+    expect(copy.wiki[0].id).not.toBe('w1')
   })
 
   it('normalise un vieux snapshot sans romans (v1) en créant un roman par défaut', () => {

@@ -21,6 +21,9 @@ synchronisez le tout vers **votre propre cloud** pour y accéder de n'importe o�
   interne, utile dans l'app desktop). Chaque chapitre peut être téléchargé individuellement en **Markdown**
   (`*.md`) et est sauvegardé comme un **fichier dédié** dans les exports multi-fichiers et la synchro cloud.
 - **Intrigues** : titre, synopsis, statut, tags et personnages impliqués.
+- **Wiki (dictionnaire de l'univers)** : entrées par projet avec un **intitulé** et une **description en éditeur
+  riche** (comme les chapitres, exportable en `.md`), liste filtrable, recherche globale dédiée, persistance dans
+  le `.lore` et la synchro cloud (`wiki/<id>.md`).
 - **Recherche globale** instantanée sur tout le projet (personnages, relations, répliques, romans, chapitres,
   intrigues), insensible à la casse et aux accents, avec extraits — **Ctrl+Espace** pour focus la barre de
   recherche.
@@ -152,7 +155,7 @@ fichier unique `<id-projet>.json` (v1) est automatiquement migré vers ce format
 
 ```
 src/
-  types.ts               # modèle de données (Project, Character, Relationship, DialogueScene, Novel, Chapter, Plot)
+  types.ts               # modèle de données (Project, Character, Relationship, DialogueScene, Novel, Chapter, Plot, WikiEntry)
   db.ts                  # base IndexedDB (Dexie)
   lib/
     text.ts              # normalisation recherche (accents), HTML → texte, extraits
@@ -161,7 +164,7 @@ src/
     snapshot.ts          # format d'export, fusion (merge), recopie avec nouveaux ids
     export.ts            # snapshot complet d'un projet depuis la base
     markdown.ts          # conversion HTML <-> Markdown + fichier .md par chapitre (frontmatter)
-    projectFiles.ts      # sauvegarde multi-fichiers : project.json + chapters/*.md + dialogues/*.json
+    projectFiles.ts      # sauvegarde multi-fichiers : project.json + chapters/*.md + dialogues/*.json + wiki/*.md
     archive.ts           # mini ZIP (writer/reader, CompressionStream natif, CRC32) — aucune dépendance
     lore.ts              # fichier .lore = ZIP de la sauvegarde multi-fichiers (export/import en un seul fichier)
     search.ts            # moteur de recherche global (pur, testé)

@@ -1,8 +1,8 @@
-import { characterDisplayName, type Chapter, type Character, type DialogueScene, type Novel, type Plot, type Relationship } from '../types'
+import { characterDisplayName, type Chapter, type Character, type DialogueScene, type Novel, type Plot, type Relationship, type WikiEntry } from '../types'
 import { relationshipTypeInfo } from './relationships'
 import { makeSnippet, normalizeForSearch, stripHtml } from './text'
 
-export type SearchKind = 'character' | 'relationship' | 'dialogue' | 'novel' | 'chapter' | 'plot'
+export type SearchKind = 'character' | 'relationship' | 'dialogue' | 'novel' | 'chapter' | 'plot' | 'wiki'
 
 export interface SearchResult {
   kind: SearchKind
@@ -23,6 +23,7 @@ export interface SearchInput {
   novels: Novel[]
   chapters: Chapter[]
   plots: Plot[]
+  wiki: WikiEntry[]
 }
 
 interface Field {
@@ -55,6 +56,7 @@ export const SEARCH_KIND_LABELS: Record<SearchKind, string> = {
   novel: 'Roman',
   chapter: 'Chapitre',
   plot: 'Intrigue',
+  wiki: 'Wiki',
 }
 
 export function searchEntities(input: SearchInput, rawQuery: string, limit = 50): SearchResult[] {
@@ -208,6 +210,28 @@ export function searchEntities(input: SearchInput, rawQuery: string, limit = 50)
         snippet: makeSnippet(matchedText || plain, q),
         score,
         path: `novel?novel=${ch.novelId ?? ''}`,
+      })
+    }
+  }
+
+  for (const w of input.wiki) {
+    const plain = stripHtml(w.content)
+    const { score, matchedText } = scoreFields(
+      [
+        { text: w.title, weight: 10 },
+        { text: plain, weight: 2 },
+      ],
+      q,
+    )
+    if (score > 0) {
+      results.push({
+        kind: 'wiki',
+        id: w.id,
+        title: w.title || 'Entrée sans titre',
+        subtitle: 'Wiki',
+        snippet: makeSnippet(matchedText || plain, q),
+        score,
+        path: `wiki/${w.id}`,
       })
     }
   }

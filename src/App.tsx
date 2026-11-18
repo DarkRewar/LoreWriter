@@ -12,6 +12,8 @@ import RelationshipsPage from './pages/RelationshipsPage'
 import DialoguesPage from './pages/DialoguesPage'
 import DialogueEditorPage from './pages/DialogueEditorPage'
 import NovelPage from './pages/NovelPage'
+import WikiPage from './pages/WikiPage'
+import WikiEditorPage from './pages/WikiEditorPage'
 import PlotsPage from './pages/PlotsPage'
 import PlotEditorPage from './pages/PlotEditorPage'
 import SearchPage from './pages/SearchPage'
@@ -47,6 +49,8 @@ export default function App() {
             <Route path="dialogues" element={<DialoguesPage />} />
             <Route path="dialogues/:sceneId" element={<DialogueEditorPage />} />
             <Route path="novel" element={<NovelPage />} />
+            <Route path="wiki" element={<WikiPage />} />
+            <Route path="wiki/:entryId" element={<WikiEditorPage />} />
             <Route path="plots" element={<PlotsPage />} />
             <Route path="plots/new" element={<PlotEditorPage />} />
             <Route path="plots/:plotId" element={<PlotEditorPage />} />

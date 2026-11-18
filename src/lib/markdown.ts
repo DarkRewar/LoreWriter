@@ -1,4 +1,4 @@
-import type { Chapter } from '../types'
+import type { Chapter, WikiEntry } from '../types'
 
 /**
  * Conversion bidirectionnelle HTML <-> Markdown, limitée au sous-ensemble
@@ -279,9 +279,20 @@ export function serializeChapterFile(ch: Chapter): string {
 }
 
 /** Relit un fichier Markdown de chapitre (frontmatter + contenu). */
-export function parseChapterFile(text: string): Chapter {
+interface ParsedMdEntry {
+  id: string
+  projectId: string
+  novelId: string
+  title: string
+  order: number
+  html: string
+  createdAt: number
+  updatedAt: number
+}
+
+function parseMdEntryFile(text: string, label: string): ParsedMdEntry {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text)
-  if (!m) throw new Error('Fichier de chapitre invalide : frontmatter manquant.')
+  if (!m) throw new Error(`Fichier ${label} invalide : frontmatter manquant.`)
   const meta: Record<string, string> = {}
   for (const line of m[1].split(/\r?\n/)) {
     const idx = line.indexOf(':')
@@ -304,15 +315,52 @@ export function parseChapterFile(text: string): Chapter {
     return Number.isFinite(n) ? n : 0
   }
   const id = str('id')
-  if (!id) throw new Error('Fichier de chapitre invalide : id manquant.')
+  if (!id) throw new Error(`Fichier ${label} invalide : id manquant.`)
   return {
     id,
     projectId: str('projectId'),
     novelId: str('novelId'),
     title: str('title'),
     order: num('order'),
-    content: markdownToHtml(text.slice(m[0].length)),
+    html: markdownToHtml(text.slice(m[0].length)),
     createdAt: num('createdAt'),
     updatedAt: num('updatedAt'),
+  }
+}
+
+export function parseChapterFile(text: string): Chapter {
+  const e = parseMdEntryFile(text, 'de chapitre')
+  return {
+    id: e.id,
+    projectId: e.projectId,
+    novelId: e.novelId,
+    title: e.title,
+    order: e.order,
+    content: e.html,
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
+  }
+}
+
+export function serializeWikiFile(w: WikiEntry): string {
+  const meta = [
+    `id: ${JSON.stringify(w.id)}`,
+    `projectId: ${JSON.stringify(w.projectId)}`,
+    `title: ${JSON.stringify(w.title)}`,
+    `createdAt: ${String(w.createdAt)}`,
+    `updatedAt: ${String(w.updatedAt)}`,
+  ]
+  return `---\n${meta.join('\n')}\n---\n\n${htmlToMarkdown(w.content)}\n`
+}
+
+export function parseWikiFile(text: string): WikiEntry {
+  const e = parseMdEntryFile(text, 'wiki')
+  return {
+    id: e.id,
+    projectId: e.projectId,
+    title: e.title,
+    content: e.html,
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
   }
 }

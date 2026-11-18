@@ -23,6 +23,7 @@ const mem = vi.hoisted(() => {
     novels: [],
     chapters: [],
     plots: [],
+    wikiEntries: [],
   }
   const makeTable = (name: string) => {
     const rows = tables[name]
@@ -76,6 +77,7 @@ const mem = vi.hoisted(() => {
     novels: makeTable('novels'),
     chapters: makeTable('chapters'),
     plots: makeTable('plots'),
+    wikiEntries: makeTable('wikiEntries'),
     transaction: async (_mode: string, _tables: unknown[], fn: () => Promise<unknown>) => fn(),
   }
   return { tables, db }
@@ -179,6 +181,7 @@ function seedProject() {
     lines: [{ id: 'l1', characterId: 'c1', text: 'Salut.' }],
   })
   mem.tables.plots.push({ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c1'], createdAt: 1, updatedAt: 1 })
+  mem.tables.wikiEntries.push({ id: 'w1', projectId: 'p1', title: 'Aubeval', content: '<p>Royaume fortifié.</p>', createdAt: 1, updatedAt: 1 })
 }
 
 beforeAll(async () => {
@@ -198,6 +201,8 @@ describe('synchro WebDAV multi-fichiers (loopback)', () => {
     expect(existsSync(remoteFile('p1', 'project.json'))).toBe(true)
     expect(existsSync(remoteFile('p1', 'chapters', 'ch1.md'))).toBe(true)
     expect(existsSync(remoteFile('p1', 'dialogues', 's1.json'))).toBe(true)
+    expect(existsSync(remoteFile('p1', 'wiki', 'w1.md'))).toBe(true)
+    expect(readFileSync(remoteFile('p1', 'wiki', 'w1.md'), 'utf8')).toContain('Aubeval')
     const md = readFileSync(remoteFile('p1', 'chapters', 'ch1.md'), 'utf8')
     expect(md).toContain('id: "ch1"')
     expect(md).toContain('Bonjour le monde.')

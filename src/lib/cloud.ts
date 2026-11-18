@@ -4,6 +4,7 @@ import {
   BASE_FILE_NAME,
   CHAPTERS_DIR,
   DIALOGUES_DIR,
+  WIKI_DIR,
   projectFilesToSnapshot,
   snapshotToProjectFiles,
   type ProjectFiles,
@@ -87,6 +88,14 @@ export function cloudChapterFileUrl(config: CloudConfig, projectId: string, chap
 
 export function cloudDialogueFileUrl(config: CloudConfig, projectId: string, sceneId: string): string {
   return cloudUrl(config, projectId, DIALOGUES_DIR, `${sceneId}.json`)
+}
+
+export function cloudWikiDirUrl(config: CloudConfig, projectId: string): string {
+  return `${cloudUrl(config, projectId, WIKI_DIR)}/`
+}
+
+export function cloudWikiFileUrl(config: CloudConfig, projectId: string, entryId: string): string {
+  return cloudUrl(config, projectId, WIKI_DIR, `${entryId}.md`)
 }
 
 /** Dossier racine contenant un sous-dossier par projet : `<base>/<folder>/lorewriter/`. */
@@ -270,6 +279,11 @@ async function pullProjectSnapshot(
       const txt = await fetchText(cfg, `${dialoguesDir}${encodeURIComponent(name)}`)
       if (txt) files.set(`${DIALOGUES_DIR}/${name}`, txt)
     }
+    const wikiDir = cloudWikiDirUrl(cfg, projectId)
+    for (const name of (await listRemoteFiles(cfg, wikiDir)).filter((n) => n.endsWith('.md'))) {
+      const txt = await fetchText(cfg, `${wikiDir}${encodeURIComponent(name)}`)
+      if (txt) files.set(`${WIKI_DIR}/${name}`, txt)
+    }
     return { snapshot: projectFilesToSnapshot(files), legacyUrl: null }
   }
   const legacyUrl = cloudFilePath(cfg, projectId)
@@ -314,6 +328,9 @@ export async function syncProjectWithCloud(projectId: string, config?: CloudConf
       type = 'application/json; charset=utf-8'
     } else if (path.startsWith(`${CHAPTERS_DIR}/`) && path.endsWith('.md')) {
       url = cloudChapterFileUrl(cfg, projectId, path.slice(CHAPTERS_DIR.length + 1, -'.md'.length))
+      type = 'text/markdown; charset=utf-8'
+    } else if (path.startsWith(`${WIKI_DIR}/`) && path.endsWith('.md')) {
+      url = cloudWikiFileUrl(cfg, projectId, path.slice(WIKI_DIR.length + 1, -'.md'.length))
       type = 'text/markdown; charset=utf-8'
     } else {
       url = cloudDialogueFileUrl(cfg, projectId, path.slice(DIALOGUES_DIR.length + 1, -'.json'.length))

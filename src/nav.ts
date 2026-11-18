@@ -13,6 +13,7 @@ export function projectNavItems(base: string): NavItem[] {
     { to: `${base}/plots`, label: '🧵 Intrigues' },
     { to: `${base}/dialogues`, label: '💬 Dialogues' },
     { to: `${base}/novel`, label: '📖 Romans' },
+    { to: `${base}/wiki`, label: '📚 Wiki' },
     { to: `${base}/settings`, label: '⚙️ Paramètres' },
   ]
 }

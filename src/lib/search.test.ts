@@ -28,6 +28,7 @@ const input = (over: Partial<SearchInput> = {}): SearchInput => ({
   novels: [],
   chapters: [],
   plots: [],
+  wiki: [],
   ...over,
 })
 
@@ -124,6 +125,20 @@ describe('searchEntities', () => {
     expect(res[0]?.snippet).toContain('forêt')
     expect(res[0]?.path).toBe('novel?novel=n1')
     expect(res[0]?.subtitle).toContain('Mon premier roman')
+  })
+
+  it('retrouve une entrée wiki par titre ou contenu', () => {
+    const res = searchEntities(
+      input({
+        wiki: [
+          { id: 'w1', projectId: 'p1', title: 'Aubeval', content: '<p>Royaume de l’ouest, <em>cité</em> fortifiée.</p>', createdAt: 1, updatedAt: 1 },
+        ],
+      }),
+      'cité',
+    )
+    expect(res.map((r) => r.kind)).toEqual(['wiki'])
+    expect(res[0].path).toBe('wiki/w1')
+    expect(res[0].snippet).toContain('cité')
   })
 
   it('retrouve un roman par son titre', () => {

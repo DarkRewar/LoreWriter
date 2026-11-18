@@ -1,8 +1,8 @@
-import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relationship } from '../types'
+import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relationship, WikiEntry } from '../types'
 import { newId } from './ids'
 
 export const SNAPSHOT_FORMAT = 'lorewriter-snapshot'
-export const SNAPSHOT_VERSION = 2
+export const SNAPSHOT_VERSION = 3
 
 export interface ProjectSnapshot {
   format: typeof SNAPSHOT_FORMAT
@@ -15,6 +15,7 @@ export interface ProjectSnapshot {
   novels: Novel[]
   chapters: Chapter[]
   plots: Plot[]
+  wiki: WikiEntry[]
 }
 
 export function serializeSnapshot(s: ProjectSnapshot): string {
@@ -85,6 +86,7 @@ export function mergeSnapshots(local: ProjectSnapshot, remote: ProjectSnapshot):
     novels: mergeList(local.novels ?? [], remote.novels ?? []),
     chapters: mergeList(local.chapters, remote.chapters),
     plots: mergeList(local.plots, remote.plots),
+    wiki: mergeList(local.wiki ?? [], remote.wiki ?? []),
   }
 }
 
@@ -149,6 +151,13 @@ export function remapSnapshotIds(s: ProjectSnapshot, newProjectId: string, now =
       id: remap(p.id),
       projectId: newProjectId,
       characterIds: p.characterIds.map((id) => remap(id)),
+      createdAt: now,
+      updatedAt: now,
+    })),
+    wiki: (s.wiki ?? []).map((w) => ({
+      ...w,
+      id: remap(w.id),
+      projectId: newProjectId,
       createdAt: now,
       updatedAt: now,
     })),

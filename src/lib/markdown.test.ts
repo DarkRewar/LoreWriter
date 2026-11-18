@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { htmlToMarkdown, markdownToHtml, parseChapterFile, serializeChapterFile } from './markdown'
-import type { Chapter } from '../types'
+import { htmlToMarkdown, markdownToHtml, parseChapterFile, parseWikiFile, serializeChapterFile, serializeWikiFile } from './markdown'
+import type { Chapter, WikiEntry } from '../types'
 
 describe('htmlToMarkdown', () => {
   it('convertit les blocs de base produits par TipTap', () => {
@@ -95,6 +95,24 @@ describe('fichier chapitre (.md avec frontmatter)', () => {
     expect(back.updatedAt).toBe(200)
     expect(back.content).toContain('<strong>partit</strong>')
     expect(htmlToMarkdown(back.content)).toBe(htmlToMarkdown(ch.content))
+  })
+
+  it('aller-retour d\'une entrée wiki (serializeWikiFile/parseWikiFile)', () => {
+    const w: WikiEntry = {
+      id: 'w1',
+      projectId: 'p1',
+      title: 'Aubeval, le royaume',
+      content: '<h2>Histoire</h2><p>Un <strong>royaume</strong> de l’ouest.</p>',
+      createdAt: 100,
+      updatedAt: 200,
+    }
+    const back = parseWikiFile(serializeWikiFile(w))
+    expect(back.id).toBe('w1')
+    expect(back.projectId).toBe('p1')
+    expect(back.title).toBe('Aubeval, le royaume')
+    expect(back.content).toContain('<strong>royaume</strong>')
+    expect(back.createdAt).toBe(100)
+    expect(back.updatedAt).toBe(200)
   })
 
   it('rejette un fichier sans frontmatter ou sans id', () => {

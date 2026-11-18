@@ -19,7 +19,7 @@ export async function touchProject(projectId: string): Promise<void> {
 export async function deleteProject(projectId: string): Promise<void> {
   await db.transaction(
     'rw',
-    [db.projects, db.characters, db.relationships, db.dialogueScenes, db.novels, db.chapters, db.plots],
+    [db.projects, db.characters, db.relationships, db.dialogueScenes, db.novels, db.chapters, db.plots, db.wikiEntries],
     async () => {
       await db.projects.delete(projectId)
       await Promise.all([
@@ -29,6 +29,7 @@ export async function deleteProject(projectId: string): Promise<void> {
         db.novels.where('projectId').equals(projectId).delete(),
         db.chapters.where('projectId').equals(projectId).delete(),
         db.plots.where('projectId').equals(projectId).delete(),
+        db.wikiEntries.where('projectId').equals(projectId).delete(),
       ])
     },
   )
@@ -61,15 +62,16 @@ export async function importProjectLore(bytes: Uint8Array): Promise<string> {
 }
 
 export async function searchProject(projectId: string, query: string): Promise<SearchResult[]> {
-  const [characters, relationships, dialogueScenes, novels, chapters, plots] = await Promise.all([
+  const [characters, relationships, dialogueScenes, novels, chapters, plots, wiki] = await Promise.all([
     db.characters.where('projectId').equals(projectId).toArray(),
     db.relationships.where('projectId').equals(projectId).toArray(),
     db.dialogueScenes.where('projectId').equals(projectId).toArray(),
     db.novels.where('projectId').equals(projectId).toArray(),
     db.chapters.where('projectId').equals(projectId).toArray(),
     db.plots.where('projectId').equals(projectId).toArray(),
+    db.wikiEntries.where('projectId').equals(projectId).toArray(),
   ])
-  return searchEntities({ projectId, characters, relationships, dialogueScenes, novels, chapters, plots }, query)
+  return searchEntities({ projectId, characters, relationships, dialogueScenes, novels, chapters, plots, wiki }, query)
 }
 
 export function downloadFile(filename: string, content: string | Uint8Array, type = 'application/octet-stream'): void {

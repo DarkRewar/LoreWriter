@@ -5,6 +5,7 @@ import {
   dialogueFileName,
   projectFilesToSnapshot,
   snapshotToProjectFiles,
+  wikiFileName,
 } from './projectFiles'
 import { parseSnapshot, SNAPSHOT_FORMAT, type ProjectSnapshot } from './snapshot'
 import type { Chapter, DialogueScene, Project } from '../types'
@@ -53,13 +54,14 @@ const snap = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
   novels: [{ id: 'n1', projectId: 'p1', title: 'Roman', createdAt: 1, updatedAt: 1 }],
   chapters: [chapter()],
   plots: [{ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c1'], createdAt: 1, updatedAt: 1 }],
+  wiki: [{ id: 'w1', projectId: 'p1', title: 'Aubeval', content: '<p>Royaume fortifié.</p>', createdAt: 1, updatedAt: 5 }],
   ...over,
 })
 
 describe('snapshotToProjectFiles / projectFilesToSnapshot', () => {
   it('produit un fichier de base + un .md par chapitre + un .json par dialogue', () => {
     const files = snapshotToProjectFiles(snap({ chapters: [chapter(), chapter({ id: 'ch2', order: 1 })] }))
-    expect([...files.keys()].sort()).toEqual([BASE_FILE_NAME, chapterFileName('ch1'), chapterFileName('ch2'), dialogueFileName('s1')].sort())
+    expect([...files.keys()].sort()).toEqual([BASE_FILE_NAME, chapterFileName('ch1'), chapterFileName('ch2'), dialogueFileName('s1'), wikiFileName('w1')].sort())
     expect(files.get(chapterFileName('ch1'))).toContain('**une fois**')
     expect(files.get(dialogueFileName('s1'))).toContain('"plotId": "pl1"')
     const base = parseSnapshot(files.get(BASE_FILE_NAME)!)
