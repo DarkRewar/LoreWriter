@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { db } from '../db'
 import { useProjectId } from '../hooks'
 import { newId } from '../lib/ids'
+import { addTombstone } from '../lib/tombstones'
 
 export default function DialoguesPage() {
   const projectId = useProjectId()
@@ -39,6 +40,7 @@ export default function DialoguesPage() {
 
   const remove = async (id: string, name: string) => {
     if (window.confirm(`Supprimer la scène « ${name} » ?`)) {
+      await addTombstone(projectId, 'dialogue', id)
       await db.dialogueScenes.delete(id)
       await db.projects.update(projectId, { updatedAt: Date.now() })
     }

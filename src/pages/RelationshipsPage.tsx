@@ -7,6 +7,7 @@ import { newId } from '../lib/ids'
 import { characterDisplayName, type RelationshipType } from '../types'
 import { isDuplicateRelationship, RELATIONSHIP_TYPES, relationshipTypeInfo } from '../lib/relationships'
 import { RelationshipGraph } from '../components/RelationshipGraph'
+import { addTombstone } from '../lib/tombstones'
 
 export default function RelationshipsPage() {
   const projectId = useProjectId()
@@ -61,6 +62,7 @@ export default function RelationshipsPage() {
   }
 
   const removeRelationship = async (id: string) => {
+    await addTombstone(projectId, 'relationship', id)
     await db.relationships.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
   }

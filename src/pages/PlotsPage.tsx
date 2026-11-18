@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { db } from '../db'
 import { useProjectId } from '../hooks'
 import type { PlotStatus } from '../types'
+import { addTombstone } from '../lib/tombstones'
 
 const STATUS_LABELS: Record<PlotStatus, string> = {
   idea: '💡 Idée',
@@ -20,6 +21,7 @@ export default function PlotsPage() {
 
   const remove = async (id: string, title: string) => {
     if (window.confirm(`Supprimer l'intrigue « ${title} » ?`)) {
+      await addTombstone(projectId, 'plot', id)
       await db.plots.delete(id)
       await db.projects.update(projectId, { updatedAt: Date.now() })
     }

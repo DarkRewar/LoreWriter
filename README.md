@@ -152,8 +152,14 @@ Sur un **nouvel appareil**, la page d'accueil liste les projets présents sur le
 > 🔒 Les identifiants restent dans le stockage local du navigateur et ne sont transmis qu'à votre serveur WebDAV.
 
 Chaque projet est envoyé sous `<dossier>/lorewriter/<id-projet>/` en plusieurs fichiers : `project.json` (fichier
-de base), `chapters/<id>.md` (un Markdown par chapitre) et `dialogues/<id>.json` (un JSON par scène). Un ancien
-fichier unique `<id-projet>.json` (v1) est automatiquement migré vers ce format multi-fichiers.
+de base), `chapters/<id>.md` (un Markdown par chapitre), `dialogues/<id>.json` (un JSON par scène) et
+`wiki/<id>.md` (une entrée wiki). Un ancien fichier unique `<id-projet>.json` (v1) est automatiquement migré
+vers ce format multi-fichiers.
+
+Les **suppressions sont propagées** grâce à des tombstones : chaque suppression écrit une trace dans la table
+`deletions` (exportée dans le champ `deleted` de `project.json`), la fusion l'unionne et filtre les entités
+supprimées, et au push les fichiers des entités supprimées sont effacés du serveur. Une entité supprimée sur un
+appareil ne réapparaît donc pas sur les autres.
 
 ## Structure du projet
 

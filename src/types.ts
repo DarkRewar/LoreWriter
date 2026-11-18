@@ -4,6 +4,16 @@ export interface MetadataField {
   value: string
 }
 
+/** Trace de suppression (tombstone) d'une entité, propagée dans les snapshots/synchro. */
+export interface Deletion {
+  /** id composite `${kind}:${entityId}` */
+  id: string
+  projectId: string
+  kind: string
+  entityId: string
+  at: number
+}
+
 export interface Project {
   id: string
   name: string

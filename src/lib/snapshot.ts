@@ -2,7 +2,14 @@ import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relations
 import { newId } from './ids'
 
 export const SNAPSHOT_FORMAT = 'lorewriter-snapshot'
-export const SNAPSHOT_VERSION = 3
+export const SNAPSHOT_VERSION = 4
+
+/** Trace de suppression propagée dans le snapshot (anti-résurrection à la synchro). */
+export interface DeletedRef {
+  kind: string
+  id: string
+  at: number
+}
 
 export interface ProjectSnapshot {
   format: typeof SNAPSHOT_FORMAT
@@ -16,6 +23,7 @@ export interface ProjectSnapshot {
   chapters: Chapter[]
   plots: Plot[]
   wiki: WikiEntry[]
+  deleted: DeletedRef[]
 }
 
 export function serializeSnapshot(s: ProjectSnapshot): string {
@@ -75,19 +83,38 @@ function mergeList<T extends Entity>(local: T[], remote: T[]): T[] {
 
 /** Fusionne deux snapshots entité par entité (la plus récente gagne). */
 export function mergeSnapshots(local: ProjectSnapshot, remote: ProjectSnapshot): ProjectSnapshot {
+  const deleted = mergeDeleted(local.deleted ?? [], remote.deleted ?? [])
+  const tomb = new Set(deleted.map((d) => `${d.kind}:${d.id}`))
+  const alive = <T extends { id: string }>(list: T[], kind: string): T[] =>
+    list.filter((e) => !tomb.has(`${kind}:${e.id}`))
+  const charTomb = new Set(deleted.filter((d) => d.kind === 'character').map((d) => d.id))
   return {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
     exportedAt: Date.now(),
     project: remote.project.updatedAt >= local.project.updatedAt ? remote.project : local.project,
-    characters: mergeList(local.characters, remote.characters),
-    relationships: mergeList(local.relationships, remote.relationships),
-    dialogueScenes: mergeList(local.dialogueScenes, remote.dialogueScenes),
-    novels: mergeList(local.novels ?? [], remote.novels ?? []),
-    chapters: mergeList(local.chapters, remote.chapters),
-    plots: mergeList(local.plots, remote.plots),
-    wiki: mergeList(local.wiki ?? [], remote.wiki ?? []),
+    characters: alive(mergeList(local.characters, remote.characters), 'character'),
+    relationships: alive(mergeList(local.relationships, remote.relationships), 'relationship').filter(
+      (r) => !charTomb.has(r.sourceId) && !charTomb.has(r.targetId),
+    ),
+    dialogueScenes: alive(mergeList(local.dialogueScenes, remote.dialogueScenes), 'dialogue'),
+    novels: alive(mergeList(local.novels ?? [], remote.novels ?? []), 'novel'),
+    chapters: alive(mergeList(local.chapters, remote.chapters), 'chapter').filter((c) => !tomb.has(`novel:${c.novelId}`)),
+    plots: alive(mergeList(local.plots, remote.plots), 'plot'),
+    wiki: alive(mergeList(local.wiki ?? [], remote.wiki ?? []), 'wiki'),
+    deleted,
   }
+}
+
+/** Union des tombstones (par entité, on garde la trace la plus récente). */
+function mergeDeleted(a: DeletedRef[], b: DeletedRef[]): DeletedRef[] {
+  const map = new Map<string, DeletedRef>()
+  for (const d of [...a, ...b]) {
+    const key = `${d.kind}:${d.id}`
+    const prev = map.get(key)
+    if (!prev || d.at > prev.at) map.set(key, d)
+  }
+  return [...map.values()]
 }
 
 /** Recrée un snapshot avec de nouveaux identifiants (copie / import). */
@@ -161,5 +188,6 @@ export function remapSnapshotIds(s: ProjectSnapshot, newProjectId: string, now =
       createdAt: now,
       updatedAt: now,
     })),
+    deleted: (s.deleted ?? []).map((d) => ({ ...d, id: remap(d.id) })),
   }
 }

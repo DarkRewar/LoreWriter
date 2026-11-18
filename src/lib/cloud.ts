@@ -1,4 +1,5 @@
 import { applySnapshot, buildSnapshot, parseSnapshot, serializeSnapshot, type ProjectSnapshot } from './export'
+import { tombstonedIds } from './tombstones'
 import { mergeSnapshots } from './snapshot'
 import {
   BASE_FILE_NAME,
@@ -219,13 +220,16 @@ export interface RemoteProjectInfo {
 export async function listRemoteProjects(config: CloudConfig): Promise<RemoteProjectInfo[]> {
   const dirUrl = cloudProjectsDirUrl(config)
   const dirs = await listRemoteDirs(config, dirUrl)
+  const deletedProjects = await tombstonedIds('*', 'project').catch(() => new Set<string>())
   const out: RemoteProjectInfo[] = []
   for (const id of dirs) {
     const base = await fetchText(config, `${dirUrl}${encodeURIComponent(id)}/${BASE_FILE_NAME}`)
     if (!base) continue
     try {
       const parsed = JSON.parse(base) as { project?: { id?: string; name?: string; updatedAt?: number } }
-      out.push({ id: parsed.project?.id ?? id, name: parsed.project?.name ?? id, updatedAt: parsed.project?.updatedAt ?? 0 })
+      const pid = parsed.project?.id ?? id
+      if (deletedProjects.has(pid)) continue
+      out.push({ id: pid, name: parsed.project?.name ?? id, updatedAt: parsed.project?.updatedAt ?? 0 })
     } catch {
       // project.json illisible : on ignore ce dossier
     }
@@ -337,6 +341,11 @@ export async function syncProjectWithCloud(projectId: string, config?: CloudConf
       type = 'application/json; charset=utf-8'
     }
     await putText(cfg, url, content, type)
+  }
+  for (const d of snapshot.deleted ?? []) {
+    if (d.kind === 'chapter') await deleteRemote(cfg, cloudChapterFileUrl(cfg, projectId, d.id))
+    else if (d.kind === 'dialogue') await deleteRemote(cfg, cloudDialogueFileUrl(cfg, projectId, d.id))
+    else if (d.kind === 'wiki') await deleteRemote(cfg, cloudWikiFileUrl(cfg, projectId, d.id))
   }
   if (pulled?.legacyUrl) await deleteRemote(cfg, pulled.legacyUrl)
   const status: SyncStatus = { at: Date.now(), projectId, action }

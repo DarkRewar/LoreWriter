@@ -23,6 +23,7 @@ const baseSnapshot = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => (
   chapters: [],
   plots: [],
   wiki: [],
+  deleted: [],
   ...over,
 })
 
@@ -42,6 +43,27 @@ describe('parseSnapshot', () => {
 })
 
 describe('mergeSnapshots', () => {
+  it('une entité tombstonée (supprimée) n\'est pas ressuscitée par la fusion', () => {
+    const local = baseSnapshot({ characters: [], deleted: [{ kind: 'character', id: 'c9', at: 100 }] })
+    const remote = baseSnapshot({
+      characters: [{ id: 'c9', projectId: 'p1', firstName: 'X', lastName: '', nickname: '', birthDate: '', manualAge: null, role: '', tags: [], metadata: [], description: '', portrait: '', createdAt: 1, updatedAt: 50 }],
+      deleted: [],
+    })
+    const merged = mergeSnapshots(local, remote)
+    expect(merged.characters.find((c) => c.id === 'c9')).toBeUndefined()
+    expect(merged.deleted).toEqual([{ kind: 'character', id: 'c9', at: 100 }])
+  })
+
+  it('union des tombstones local + remote (le plus récent gagne)', () => {
+    const local = baseSnapshot({ deleted: [{ kind: 'wiki', id: 'w1', at: 100 }] })
+    const remote = baseSnapshot({ deleted: [{ kind: 'wiki', id: 'w1', at: 50 }, { kind: 'plot', id: 'p9', at: 60 }] })
+    const merged = mergeSnapshots(local, remote)
+    expect(merged.deleted).toEqual([
+      { kind: 'wiki', id: 'w1', at: 100 },
+      { kind: 'plot', id: 'p9', at: 60 },
+    ])
+  })
+
   it('garde l\'entité la plus récente et fait l\'union', () => {
     const local = baseSnapshot({
       characters: [

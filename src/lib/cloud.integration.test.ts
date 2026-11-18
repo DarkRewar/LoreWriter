@@ -24,6 +24,7 @@ const mem = vi.hoisted(() => {
     chapters: [],
     plots: [],
     wikiEntries: [],
+    deletions: [],
   }
   const makeTable = (name: string) => {
     const rows = tables[name]
@@ -78,6 +79,7 @@ const mem = vi.hoisted(() => {
     chapters: makeTable('chapters'),
     plots: makeTable('plots'),
     wikiEntries: makeTable('wikiEntries'),
+    deletions: makeTable('deletions'),
     transaction: async (_mode: string, _tables: unknown[], fn: () => Promise<unknown>) => fn(),
   }
   return { tables, db }
@@ -91,6 +93,7 @@ vi.stubGlobal('localStorage', {
 })
 
 import { syncProjectWithCloud, type CloudConfig } from './cloud'
+import { addTombstone } from './tombstones'
 
 let root = ''
 let server: http.Server
@@ -255,5 +258,28 @@ describe('synchro WebDAV multi-fichiers (loopback)', () => {
     expect(mem.tables.projects.find((p) => p.id === 'p1')?.name).toBe('Projet test (legacy)')
     expect(existsSync(remoteFile('p1', 'project.json'))).toBe(true)
     expect(existsSync(remoteFile('p1.json'))).toBe(false)
+  })
+
+  it('propage une suppression locale (tombstone) : fichier distant supprim\u00e9, l\'entit\u00e9 ne r\u00e9appara\u00eet pas', async () => {
+    expect(existsSync(remoteFile('p1', 'chapters', 'ch1.md'))).toBe(true)
+    // suppression locale + tombstone, comme dans les pages
+    await mem.db.chapters.delete('ch1')
+    await addTombstone('p1', 'chapter', 'ch1')
+    await syncProjectWithCloud('p1', cfg())
+    // le fichier du chapitre est supprim\u00e9 du serveur et le tombstone est dans project.json
+    expect(existsSync(remoteFile('p1', 'chapters', 'ch1.md'))).toBe(false)
+    const base = JSON.parse(readFileSync(remoteFile('p1', 'project.json'), 'utf8'))
+    expect(base.deleted ?? []).toContainEqual(expect.objectContaining({ kind: 'chapter', id: 'ch1' }))
+    expect(mem.tables.chapters.find((c) => c.id === 'ch1')).toBeUndefined()
+
+    // un ancien appareil (pas encore synchro) renvoie le fichier supprim\u00e9
+    writeFileSync(
+      remoteFile('p1', 'chapters', 'ch1.md'),
+      '---\nid: "ch1"\nprojectId: "p1"\nnovelId: "n1"\ntitle: "Chapitre 1"\norder: 0\ncreatedAt: 1\nupdatedAt: 999\n---\n\n## Ressuscit\u00e9 ailleurs\n',
+    )
+    await syncProjectWithCloud('p1', cfg())
+    // le tombstone filtre l'entit\u00e9 : elle ne r\u00e9appara\u00eet pas localement, et le fichier est re-supprim\u00e9 du serveur
+    expect(mem.tables.chapters.find((c) => c.id === 'ch1')).toBeUndefined()
+    expect(existsSync(remoteFile('p1', 'chapters', 'ch1.md'))).toBe(false)
   })
 })

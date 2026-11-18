@@ -7,6 +7,7 @@ import { RichTextEditor } from '../components/RichTextEditor'
 import { wordCount } from '../lib/text'
 import { serializeWikiFile } from '../lib/markdown'
 import { downloadFile } from '../lib/queries'
+import { addTombstone } from '../lib/tombstones'
 
 export default function WikiEditorPage() {
   const projectId = useProjectId()
@@ -69,6 +70,7 @@ export default function WikiEditorPage() {
 
   const remove = async () => {
     if (!entry || !window.confirm(`Supprimer l'entrée « ${entry.title || 'sans titre'} » ?`)) return
+    await addTombstone(projectId, 'wiki', entry.id)
     await db.wikiEntries.delete(entry.id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
     navigate(`/projects/${projectId}/wiki`)

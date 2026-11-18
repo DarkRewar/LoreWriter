@@ -52,6 +52,7 @@ const snap = (over: Partial<ProjectSnapshot> = {}): ProjectSnapshot => ({
     } as Chapter,
   ],
   wiki: [],
+  deleted: [],
   plots: [{ id: 'pl1', projectId: 'p1', title: 'Intrigue', synopsis: '', status: 'idea', tags: [], characterIds: ['c1'], createdAt: 1, updatedAt: 1 }],
   ...over,
 })

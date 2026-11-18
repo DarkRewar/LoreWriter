@@ -7,6 +7,7 @@ import { newId } from '../lib/ids'
 import type { DialogueScene, Plot, PlotStatus } from '../types'
 import { characterDisplayName } from '../types'
 import { TagInput } from '../components/TagInput'
+import { addTombstone } from '../lib/tombstones'
 
 const STATUS_LABELS: Record<PlotStatus, string> = {
   idea: '💡 Idée',
@@ -80,6 +81,7 @@ export default function PlotEditorPage() {
 
   const onDelete = async () => {
     if (window.confirm(`Supprimer l'intrigue « ${draft.title || 'sans titre'} » ?`)) {
+      await addTombstone(projectId, 'plot', draft.id)
       await db.plots.delete(draft.id)
       navigate(`/projects/${projectId}/plots`)
     }

@@ -14,6 +14,7 @@ const mem = vi.hoisted(() => {
     chapters: [],
     plots: [],
     wikiEntries: [],
+    deletions: [],
   }
   const makeTable = (name: string) => {
     const rows = tables[name]
@@ -68,6 +69,7 @@ const mem = vi.hoisted(() => {
     chapters: makeTable('chapters'),
     plots: makeTable('plots'),
     wikiEntries: makeTable('wikiEntries'),
+    deletions: makeTable('deletions'),
     transaction: async (_mode: string, _tables: unknown[], fn: () => Promise<unknown>) => fn(),
   }
   return { tables, db }

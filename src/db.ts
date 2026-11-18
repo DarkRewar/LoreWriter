@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Chapter, Character, DialogueScene, Novel, Plot, Project, Relationship, WikiEntry } from './types'
+import type { Chapter, Character, Deletion, DialogueScene, Novel, Plot, Project, Relationship, WikiEntry } from './types'
 import { newId } from './lib/ids'
 
 export class LoreWriterDB extends Dexie {
@@ -11,6 +11,7 @@ export class LoreWriterDB extends Dexie {
   chapters!: Table<Chapter, string>
   plots!: Table<Plot, string>
   wikiEntries!: Table<WikiEntry, string>
+  deletions!: Table<Deletion, string>
 
   constructor() {
     super('lorewriter')
@@ -53,6 +54,9 @@ export class LoreWriterDB extends Dexie {
       })
     this.version(4).stores({
       wikiEntries: 'id, projectId, title, updatedAt',
+    })
+    this.version(5).stores({
+      deletions: 'id, projectId, kind, at',
     })
   }
 }

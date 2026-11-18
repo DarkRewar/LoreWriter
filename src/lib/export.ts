@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { tombstonesFor } from './tombstones'
 import { parseSnapshot, serializeSnapshot, SNAPSHOT_VERSION, type ProjectSnapshot } from './snapshot'
 
 export { parseSnapshot, serializeSnapshot }
@@ -16,6 +17,7 @@ export async function buildSnapshot(projectId: string): Promise<ProjectSnapshot>
     db.plots.where('projectId').equals(projectId).toArray(),
     db.wikiEntries.where('projectId').equals(projectId).toArray(),
   ])
+  const deleted = await tombstonesFor(projectId)
   return {
     format: 'lorewriter-snapshot',
     version: SNAPSHOT_VERSION,
@@ -28,6 +30,7 @@ export async function buildSnapshot(projectId: string): Promise<ProjectSnapshot>
     chapters,
     plots,
     wiki,
+    deleted,
   }
 }
 
@@ -36,7 +39,7 @@ export async function applySnapshot(snapshot: ProjectSnapshot, mode: 'replace' |
   const pid = snapshot.project.id
   await db.transaction(
     'rw',
-    [db.projects, db.characters, db.relationships, db.dialogueScenes, db.novels, db.chapters, db.plots, db.wikiEntries],
+    [db.projects, db.characters, db.relationships, db.dialogueScenes, db.novels, db.chapters, db.plots, db.wikiEntries, db.deletions],
     async () => {
       if (mode === 'replace') {
         await Promise.all([
@@ -47,6 +50,7 @@ export async function applySnapshot(snapshot: ProjectSnapshot, mode: 'replace' |
           db.chapters.where('projectId').equals(pid).delete(),
           db.plots.where('projectId').equals(pid).delete(),
           db.wikiEntries.where('projectId').equals(pid).delete(),
+          db.deletions.where('projectId').equals(pid).delete(),
         ])
       }
       await db.projects.put(snapshot.project)
@@ -57,6 +61,10 @@ export async function applySnapshot(snapshot: ProjectSnapshot, mode: 'replace' |
       if (snapshot.chapters.length) await db.chapters.bulkPut(snapshot.chapters)
       if (snapshot.plots.length) await db.plots.bulkPut(snapshot.plots)
       if (snapshot.wiki?.length) await db.wikiEntries.bulkPut(snapshot.wiki)
+      if (snapshot.deleted?.length)
+        await db.deletions.bulkPut(
+          snapshot.deleted.map((d) => ({ id: `${d.kind}:${d.id}`, projectId: pid, kind: d.kind, entityId: d.id, at: d.at })),
+        )
     },
   )
   return pid

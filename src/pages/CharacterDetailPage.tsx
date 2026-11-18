@@ -6,6 +6,7 @@ import { CharacterAvatar } from '../components/CharacterAvatar'
 import { characterDisplayName } from '../types'
 import { computeAge, formatDateFr } from '../lib/age'
 import { relationshipTypeInfo } from '../lib/relationships'
+import { addTombstone } from '../lib/tombstones'
 
 export default function CharacterDetailPage() {
   const projectId = useProjectId()
@@ -47,7 +48,14 @@ export default function CharacterDetailPage() {
 
   const onDelete = async () => {
     if (window.confirm(`Supprimer ${name} et toutes ses relations ?`)) {
-      await db.transaction('rw', [db.characters, db.relationships], async () => {
+      await db.transaction('rw', [db.characters, db.relationships, db.deletions], async () => {
+        await addTombstone(projectId, 'character', character.id)
+        const rels = await db.relationships
+          .where('projectId')
+          .equals(projectId)
+          .filter((r) => r.sourceId === character.id || r.targetId === character.id)
+          .toArray()
+        for (const r of rels) await addTombstone(projectId, 'relationship', r.id)
         await db.characters.delete(character.id)
         await db.relationships
           .where('projectId')

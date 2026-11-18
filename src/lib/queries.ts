@@ -4,6 +4,7 @@ import { remapSnapshotIds } from './snapshot'
 import { newId } from './ids'
 import { searchEntities, type SearchResult } from './search'
 import { loreBytesToSnapshot, snapshotToLoreBytes } from './lore'
+import { addTombstone } from './tombstones'
 
 export async function createProject(name: string, description: string): Promise<string> {
   const now = Date.now()
@@ -17,6 +18,7 @@ export async function touchProject(projectId: string): Promise<void> {
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
+  await addTombstone(projectId, 'project', projectId)
   await db.transaction(
     'rw',
     [db.projects, db.characters, db.relationships, db.dialogueScenes, db.novels, db.chapters, db.plots, db.wikiEntries],
@@ -30,6 +32,7 @@ export async function deleteProject(projectId: string): Promise<void> {
         db.chapters.where('projectId').equals(projectId).delete(),
         db.plots.where('projectId').equals(projectId).delete(),
         db.wikiEntries.where('projectId').equals(projectId).delete(),
+        db.deletions.where('projectId').equals(projectId).delete(),
       ])
     },
   )

@@ -8,6 +8,7 @@ import { downloadFile } from '../lib/queries'
 import { serializeWikiFile } from '../lib/markdown'
 import { normalizeForSearch, stripHtml } from '../lib/text'
 import type { WikiEntry } from '../types'
+import { addTombstone } from '../lib/tombstones'
 
 export default function WikiPage() {
   const projectId = useProjectId()
@@ -35,6 +36,7 @@ export default function WikiPage() {
 
   const removeEntry = async (id: string) => {
     if (!window.confirm('Supprimer cette entrée du wiki ?')) return
+    await addTombstone(projectId, 'wiki', id)
     await db.wikiEntries.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
   }
