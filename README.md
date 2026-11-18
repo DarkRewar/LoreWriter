@@ -112,24 +112,41 @@ docker run -p 8080:80 lorewriter
 Puis ouvrez l'URL depuis n'importe quel appareil (et « Ajoutez à l'écran d'accueil » pour l'installer comme une app
 PWA, utilisable hors ligne).
 
-## Configurer la synchronisation cloud (WebDAV)
+## Configurer la synchronisation cloud (WebDAV) — mise en place from scratch
 
-1. Dans l'app : page **☁️ Cloud**.
-2. Renseignez l'URL WebDAV de votre cloud, par exemple Nextcloud :
-   `https://cloud.example.com/remote.php/dav/files/VOTRE_NOM`
-3. Identifiant + **mot de passe d'application** (Nextcloud : Paramètres → Sécurité → Appareils et sessions).
-4. Dossier distant (ex. `LoreWriter`), puis activez la synchro et testez la connexion.
+LoreWriter fonctionne d'abord **hors ligne** (IndexedDB) ; la synchro cloud ajoute le **multi-appareils** (PC fixe,
+Mac, téléphone) via n'importe quel serveur **WebDAV** (Nextcloud, ownCloud, NAS Synology, Koofr, pCloud…).
 
-Chaque projet est envoyé sous `<dossier>/lorewriter/<id-projet>/` en plusieurs fichiers : `project.json` (fichier
-de base), `chapters/<id>.md` (un Markdown par chapitre) et `dialogues/<id>.json` (un JSON par scène). Sur un autre
-appareil, configurez le même cloud : à l'ouverture d'un projet, la version distante est téléchargée, fusionnée avec
-la locale (modification la plus récente gagnante), puis renvoyée. Un ancien fichier unique `<id-projet>.json` est
-automatiquement migré vers ce format multi-fichiers.
+**Étape 1 — choisir/obtenir un espace WebDAV** (HTTPS obligatoire, lu depuis un téléphone) :
+- hébergé : une instance Nextcloud chez un hébergeur (ex. Infomaniak, Zaclys, Hetzner Storage Share…), ou
+- auto-hébergé : `docker run -d -p 8080:80 nextcloud` (Nextcloud en local, derrière un reverse-proxy HTTPS en ligne).
+
+**Étape 2 — créer un mot de passe d'application** (jamais le mot de passe principal) :
+- Nextcloud : **Paramètres → Sécurité → Appareils et sessions → nouvel appareil** (ex. « LoreWriter téléphone »).
+
+**Étape 3 — configurer dans l'app** (page **☁️ Cloud**, par navigateur/appareil) :
+1. URL de base WebDAV : `https://cloud.example.com/remote.php/dav/files/VOTRE_NOM`
+2. Identifiant + **mot de passe d'application** créé à l'étape 2
+3. Dossier distant : `LoreWriter` (créé automatiquement)
+4. Cochez « Activer la synchronisation automatique » puis **Tester la connexion**
+
+**Étape 4 — installer la PWA sur chaque appareil** : ouvrez l'URL de l'app → « Ajouter à l'écran d'accueil »
+(téléphone) / menu navigateur (PC/Mac). Sur chaque appareil, refaites l'étape 3 avec le même cloud.
+
+**Ensuite** : à l'ouverture d'un projet, la version distante est téléchargée et fusionnée (modification la plus
+récente gagnante, entité par entité), puis renvoyée ; la synchro tourne aussi toutes les 60 s et via le bouton
+💾 / **Ctrl+S**. Astuce : les chapitres sont de vrais fichiers `.md` dans le cloud — éditables aussi depuis
+l'éditeur de fichiers de Nextcloud. Règle pour éviter les conflits : ne pas modifier la même entité (chapitre,
+scène…) en même temps sur deux appareils.
 
 Sur un **nouvel appareil**, la page d'accueil liste les projets présents sur le cloud mais pas encore en local
 (section « ☁️ Projets sur le cloud ») avec un bouton **⬇️ Télécharger** pour les récupérer.
 
 > 🔒 Les identifiants restent dans le stockage local du navigateur et ne sont transmis qu'à votre serveur WebDAV.
+
+Chaque projet est envoyé sous `<dossier>/lorewriter/<id-projet>/` en plusieurs fichiers : `project.json` (fichier
+de base), `chapters/<id>.md` (un Markdown par chapitre) et `dialogues/<id>.json` (un JSON par scène). Un ancien
+fichier unique `<id-projet>.json` (v1) est automatiquement migré vers ce format multi-fichiers.
 
 ## Structure du projet
 
