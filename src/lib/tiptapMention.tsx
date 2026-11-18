@@ -21,10 +21,8 @@ interface MentionListHandle {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean
 }
 
-const MentionList = forwardRef<MentionListHandle, { suggestion: MentionSuggestionProps }>(function MentionList(
-  { suggestion },
-  ref,
-) {
+const MentionList = forwardRef<MentionListHandle, { suggestion: MentionSuggestionProps; hide: () => void }>(
+  function MentionList({ suggestion, hide }, ref) {
   const items = suggestion.items.map(toRef)
   const [selected, setSelected] = useState(0)
   useEffect(() => setSelected(0), [suggestion.items])
@@ -41,7 +39,10 @@ const MentionList = forwardRef<MentionListHandle, { suggestion: MentionSuggestio
       }
       if (event.key === 'Enter') {
         const item = items[selected]
-        if (item) suggestion.command({ id: item.id, kind: item.kind, label: item.label })
+        if (item) {
+          suggestion.command({ id: item.id, kind: item.kind, label: item.label })
+          hide()
+        }
         return true
       }
       return false
@@ -57,7 +58,10 @@ const MentionList = forwardRef<MentionListHandle, { suggestion: MentionSuggestio
           role="option"
           aria-selected={i === selected}
           className={`mention-item${i === selected ? ' active' : ''}`}
-          onClick={() => suggestion.command({ id: item.id, kind: item.kind, label: item.label })}
+          onClick={() => {
+            suggestion.command({ id: item.id, kind: item.kind, label: item.label })
+            hide()
+          }}
           onMouseEnter={() => setSelected(i)}
         >
           <span className="mention-kind">{MENTION_KIND_LABELS[item.kind] ?? item.kind}</span>
@@ -146,7 +150,8 @@ export function buildMentionExtension(getItems: () => MentionRef[], projectId: s
         const clientRect = (props: MentionSuggestionProps) => () => props.clientRect?.() ?? new DOMRect()
         return {
           onStart: (props: MentionSuggestionProps) => {
-            component = new ReactRenderer(MentionList, { props: { suggestion: props }, editor: props.editor as Editor })
+            const hide = () => popup?.[0]?.hide()
+            component = new ReactRenderer(MentionList, { props: { suggestion: props, hide }, editor: props.editor as Editor })
             popup = tippy(document.body, {
               getReferenceClientRect: clientRect(props),
               appendTo: () => document.body,
@@ -158,7 +163,7 @@ export function buildMentionExtension(getItems: () => MentionRef[], projectId: s
             }) as unknown as TippyInstance[]
           },
           onUpdate: (props: MentionSuggestionProps) => {
-            component?.updateProps({ suggestion: props })
+            component?.updateProps({ suggestion: props, hide: () => popup?.[0]?.hide() })
             popup?.[0]?.setProps({ getReferenceClientRect: clientRect(props) })
           },
           onKeyDown: (props: { event: KeyboardEvent }) => {

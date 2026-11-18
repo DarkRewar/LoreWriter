@@ -42,5 +42,8 @@ export function useMentionItems(): () => MentionRef[] {
     ])
     return collectMentionItems({ characters, wikiEntries, dialogueScenes, novels, plots })
   }, [projectId])
-  return useCallback(() => items ?? [], [items])
+  // getter à identité STABLE (ref) : évite de recréer l'éditeur TipTap (perte de focus) à chaque mise à jour
+  const itemsRef = useRef<MentionRef[]>([])
+  itemsRef.current = items ?? []
+  return useCallback(() => itemsRef.current, [])
 }
