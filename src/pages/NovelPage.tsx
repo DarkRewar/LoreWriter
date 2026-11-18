@@ -9,9 +9,11 @@ import { wordCount } from '../lib/text'
 import { serializeChapterFile } from '../lib/markdown'
 import { downloadFile } from '../lib/queries'
 import type { Chapter, Novel } from '../types'
+import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
 
 export default function NovelPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const mentionItems = useMentionItems()
   const [searchParams] = useSearchParams()
@@ -125,7 +127,7 @@ export default function NovelPage() {
   }
 
   const removeChapter = async (id: string) => {
-    if (!window.confirm('Supprimer ce chapitre ?')) return
+    if (!(await confirm({ message: 'Supprimer ce chapitre ?' }))) return
     await addTombstone(projectId, 'chapter', id)
     await db.chapters.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })
@@ -158,7 +160,7 @@ export default function NovelPage() {
 
   const removeNovel = async (n: Novel) => {
     const count = chaptersCount(n.id)
-    if (!window.confirm(`Supprimer le roman « ${n.title} » et ses ${count} chapitre(s) ?`)) return
+    if (!(await confirm({ title: 'Supprimer le roman', message: `Supprimer le roman « ${n.title} » et ses ${count} chapitre(s) ?` }))) return
     await db.transaction('rw', [db.novels, db.chapters], async () => {
       await addTombstone(projectId, 'novel', n.id)
       const chIds = (allChapters ?? []).filter((c) => c.novelId === n.id).map((c) => c.id)

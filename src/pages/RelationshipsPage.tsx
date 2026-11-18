@@ -7,9 +7,11 @@ import { newId } from '../lib/ids'
 import { characterDisplayName, type RelationshipType } from '../types'
 import { isDuplicateRelationship, RELATIONSHIP_TYPES, relationshipTypeInfo } from '../lib/relationships'
 import { RelationshipGraph } from '../components/RelationshipGraph'
+import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
 
 export default function RelationshipsPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const [view, setView] = useState<'list' | 'graph'>('list')
 
@@ -62,6 +64,7 @@ export default function RelationshipsPage() {
   }
 
   const removeRelationship = async (id: string) => {
+    if (!(await confirm({ message: 'Supprimer cette relation ?' }))) return
     await addTombstone(projectId, 'relationship', id)
     await db.relationships.delete(id)
     await db.projects.update(projectId, { updatedAt: Date.now() })

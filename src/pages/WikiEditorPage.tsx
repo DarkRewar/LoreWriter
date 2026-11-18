@@ -7,9 +7,11 @@ import { RichTextEditor } from '../components/RichTextEditor'
 import { wordCount } from '../lib/text'
 import { serializeWikiFile } from '../lib/markdown'
 import { downloadFile } from '../lib/queries'
+import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
 
 export default function WikiEditorPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const mentionItems = useMentionItems()
   const { entryId } = useParams()
@@ -69,7 +71,8 @@ export default function WikiEditorPage() {
   }
 
   const remove = async () => {
-    if (!entry || !window.confirm(`Supprimer l'entrée « ${entry.title || 'sans titre'} » ?`)) return
+    if (!entry) return
+    if (!(await confirm({ message: `Supprimer l'entrée « ${entry.title || 'sans titre'} » ?` }))) return
     await addTombstone(projectId, 'wiki', entry.id)
     await db.wikiEntries.delete(entry.id)
     await db.projects.update(projectId, { updatedAt: Date.now() })

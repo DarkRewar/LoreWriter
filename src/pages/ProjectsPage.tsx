@@ -14,8 +14,10 @@ import {
 import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 import { saveFileNative } from '../lib/desktop'
 import { downloadRemoteProject, listRemoteProjects, loadCloudConfig, type RemoteProjectInfo } from '../lib/cloud'
+import { useConfirm } from '../components/ConfirmDialog'
 
 function ProjectCard({ project }: { project: Project }) {
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const counts = useLiveQuery(async () => {
     const pid = project.id
@@ -47,7 +49,7 @@ function ProjectCard({ project }: { project: Project }) {
   }
 
   const onDelete = async () => {
-    if (window.confirm(`Supprimer définitivement le projet « ${project.name} » et tout son contenu ?`)) {
+    if (await confirm({ title: 'Supprimer le projet', message: `Supprimer définitivement le projet « ${project.name} » et tout son contenu ?` })) {
       await deleteProject(project.id)
     }
   }

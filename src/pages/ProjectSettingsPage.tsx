@@ -6,8 +6,10 @@ import { useProject, useProjectId } from '../hooks'
 import { deleteProject, downloadFile, exportProjectLore, importProjectLore } from '../lib/queries'
 import { LORE_EXTENSION, LORE_MIME, looksLikeLoreFile } from '../lib/lore'
 import { saveFileNative } from '../lib/desktop'
+import { useConfirm } from '../components/ConfirmDialog'
 
 export default function ProjectSettingsPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const project = useProject()
   const navigate = useNavigate()
@@ -71,7 +73,7 @@ export default function ProjectSettingsPage() {
   }
 
   const onDelete = async () => {
-    if (window.confirm(`Supprimer définitivement « ${project.name} » et tout son contenu ? Cette action est irréversible.`)) {
+    if (await confirm({ title: 'Supprimer le projet', message: `Supprimer définitivement « ${project.name} » et tout son contenu ? Cette action est irréversible.` })) {
       await deleteProject(projectId)
       navigate('/')
     }

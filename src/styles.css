@@ -878,3 +878,27 @@ a.mention:hover { background: var(--accent); color: #fff9f2; }
 .tippy-box[data-theme~='mention'] { background: transparent; color: inherit; box-shadow: none; border-radius: 0; padding: 0; }
 .tippy-box[data-theme~='mention'] .tippy-content { padding: 0; }
 .tippy-box[data-theme~='mention'] .tippy-arrow { display: none; }
+
+/* ---------- modale de confirmation (suppressions) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(60, 47, 34, 0.35);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  width: 100%;
+  max-width: 430px;
+  animation: pop-in 0.18s ease both;
+}
+.modal h2 { margin-top: 0; }

@@ -6,9 +6,11 @@ import { CharacterAvatar } from '../components/CharacterAvatar'
 import { characterDisplayName } from '../types'
 import { computeAge, formatDateFr } from '../lib/age'
 import { relationshipTypeInfo } from '../lib/relationships'
+import { useConfirm } from '../components/ConfirmDialog'
 import { addTombstone } from '../lib/tombstones'
 
 export default function CharacterDetailPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const { characterId } = useParams()
   const navigate = useNavigate()
@@ -47,7 +49,7 @@ export default function CharacterDetailPage() {
   }
 
   const onDelete = async () => {
-    if (window.confirm(`Supprimer ${name} et toutes ses relations ?`)) {
+    if (await confirm({ title: 'Supprimer le personnage', message: `Supprimer ${name} et toutes ses relations ?` })) {
       await db.transaction('rw', [db.characters, db.relationships, db.deletions], async () => {
         await addTombstone(projectId, 'character', character.id)
         const rels = await db.relationships

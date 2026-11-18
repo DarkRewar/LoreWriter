@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 import TopbarSearch from './components/TopbarSearch'
 import SaveButton from './components/SaveButton'
 import BurgerMenu from './components/BurgerMenu'
+import { ConfirmProvider } from './components/ConfirmDialog'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectLayout from './pages/ProjectLayout'
 import DashboardPage from './pages/DashboardPage'
@@ -22,6 +23,7 @@ import CloudSettingsPage from './pages/CloudSettingsPage'
 
 export default function App() {
   return (
+    <ConfirmProvider>
     <div className="app">
       <header className="app-header">
         <BurgerMenu />
@@ -69,5 +71,6 @@ export default function App() {
         </Routes>
       </main>
     </div>
+    </ConfirmProvider>
   )
 }

@@ -161,6 +161,12 @@ Les **suppressions sont propagées** grâce à des tombstones : chaque suppressi
 supprimées, et au push les fichiers des entités supprimées sont effacés du serveur. Une entité supprimée sur un
 appareil ne réapparaît donc pas sur les autres.
 
+## Conventions
+
+- **Toute action de suppression** passe par la modale de confirmation in-app : `const confirm = useConfirm()`
+  (`src/components/ConfirmDialog.tsx`) puis `if (await confirm({ title, message })) { … }`. Ne jamais utiliser
+  `window.confirm`.
+
 ## Structure du projet
 
 ```

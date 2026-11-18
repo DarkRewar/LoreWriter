@@ -7,8 +7,10 @@ import { useMentionItems, useProjectId, useSaveFlush } from '../hooks'
 import { newId } from '../lib/ids'
 import type { DialogueLine, DialogueScene } from '../types'
 import { characterDisplayName } from '../types'
+import { useConfirm } from '../components/ConfirmDialog'
 
 export default function DialogueEditorPage() {
+  const confirm = useConfirm()
   const projectId = useProjectId()
   const mentionItems = useMentionItems()
   const { sceneId } = useParams()
@@ -91,7 +93,10 @@ export default function DialogueEditorPage() {
   const addLine = () =>
     update({ lines: [...draft.lines, { id: newId(), characterId: characters?.[0]?.id ?? '', text: '' }] })
 
-  const removeLine = (id: string) => update({ lines: draft.lines.filter((l) => l.id !== id) })
+  const removeLine = async (id: string) => {
+    if (!(await confirm({ message: 'Supprimer cette réplique ?' }))) return
+    update({ lines: draft.lines.filter((l) => l.id !== id) })
+  }
 
   const moveLine = (id: string, dir: -1 | 1) => {
     const idx = draft.lines.findIndex((l) => l.id === id)
@@ -193,7 +198,7 @@ export default function DialogueEditorPage() {
                 <button type="button" className="btn-icon" title="Descendre" onClick={() => moveLine(l.id, 1)}>
                   ↓
                 </button>
-                <button type="button" className="btn-icon" title="Supprimer" onClick={() => removeLine(l.id)}>
+                <button type="button" className="btn-icon" title="Supprimer" onClick={() => void removeLine(l.id)}>
                   🗑
                 </button>
               </div>
