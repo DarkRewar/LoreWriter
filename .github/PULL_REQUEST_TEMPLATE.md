@@ -1,15 +1,15 @@
-## Résumé
+## Summary
 
-- Change quoi, pourquoi.
+- What does this change, and why?
 
-## Checklist workflow (gitflow, base `develop`)
+## Workflow checklist (gitflow, base `develop`)
 
-- [ ] Branche créée depuis `develop` à jour : `git checkout develop && git pull && git checkout -b feature/<sujet>`
-- [ ] PR ouverte vers `develop` (les features ne mergent pas directement sur `main`)
-- [ ] Rebase sur `develop` avant merge : `git fetch origin && git rebase origin/develop` (puis `git push --force-with-lease` si la branche était déjà poussée)
-- [ ] CI verte (typecheck + tests + build)
-- [ ] `npm run build` OK en local
+- [ ] Branch created from up-to-date `develop`: `git checkout develop && git pull && git checkout -b feature/<topic>`
+- [ ] PR opened against `develop` (features never merge straight into `main`)
+- [ ] Rebased on `develop` before merging: `git fetch origin && git rebase origin/develop` (then `git push --force-with-lease` if the branch was already pushed)
+- [ ] CI green (typecheck + tests + build)
+- [ ] `npm run build` OK locally
 
-## Vérification
+## Verification
 
-- Commandes exécutées, résultats.
+- Commands run, results.
