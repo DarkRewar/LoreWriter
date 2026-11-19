@@ -129,6 +129,12 @@ Deployment then runs automatically on every published release (tag `v*`, e.g. `g
 tests). The HTTPS URL lets you install the PWA on a phone ("Add to home screen") and use WebDAV sync without
 mixed-content blocking.
 
+**Automatic updates (PWA)**: the open app detects a newly deployed version by itself — the service worker is
+checked on load and every 30 minutes while the app stays open (`skipWaiting` + `clientsClaim`, so the new worker
+activates immediately) — flushes any pending editor writes, then **reloads onto the new version** automatically.
+No stale bundle, no infinite reload loop, identical behavior in the installed PWA (phone) and in the browser. The
+desktop (Tauri) apps are not concerned: they use their own update mechanism.
+
 ### Standalone desktop apps (Windows / macOS)
 
 The app is packaged natively with **Tauri v2** (`src-tauri/`): the web build (`dist/`) is embedded in a native

@@ -84,6 +84,12 @@ Après la configuration initiale, si le premier run a eu lieu avant l'activation
 L'URL en HTTPS permet d'installer la PWA sur téléphone (« Ajouter à l'écran d'accueil ») et d'utiliser la synchro
 cloud WebDAV sans blocage de contenu mixte.
 
+**Mise à jour automatique (PWA)** : l'app ouverte détecte toute nouvelle version déployée — le service worker est
+vérifié au chargement et toutes les 30 min tant que l'app reste ouverte (`skipWaiting` + `clientsClaim`, le
+nouveau worker s'active immédiatement) — vide les tampons d'écriture en attente, puis **se recharge tout seul sur
+la nouvelle version**. Pas de bundle périmé, pas de boucle de rechargement, même comportement en PWA installée
+(téléphone) et en navigateur. Les apps desktop (Tauri) ne sont pas concernées : elles ont leur propre mécanisme.
+
 ## Applications standalone (Windows / macOS)
 
 L'application est packagée en natif avec **Tauri v2** (`src-tauri/`) : le build web (`dist/`) est embarqué dans une

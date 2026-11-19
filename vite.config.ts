@@ -39,6 +39,11 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: 'index.html',
+        // Mise à jour auto de la PWA (#7) : le nouveau SW s'active immédiatement
+        // (skipWaiting) et prend le contrôle des pages (clientsClaim) → le code
+        // client (autoUpdate) recharge la page sur l'événement 'activated'.
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: { enabled: false },
     }),
