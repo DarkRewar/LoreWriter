@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read   # requis pour télécharger l'artefact 'github-pages' (deploy-pages)
   pages: write
   id-token: write
 
