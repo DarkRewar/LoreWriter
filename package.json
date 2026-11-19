@@ -1,7 +1,7 @@
 {
   "name": "lorewriter",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "description": "LoreWriter — atelier de storytelling : projets, personnages, relations, dialogues, roman, recherche globale et synchronisation cloud.",
   "scripts": {
